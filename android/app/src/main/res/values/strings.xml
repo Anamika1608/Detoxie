@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Detoxie</string>
+    <string name="accessibility_service_description">Reels Monitor Service</string>
 </resources>
