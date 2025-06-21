@@ -10,9 +10,12 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native/new-app-screen": "0.80.0",
+    "nativewind": "^4.1.23",
     "react": "19.1.0",
     "react-native": "0.80.0",
-    "@react-native/new-app-screen": "0.80.0"
+    "react-native-reanimated": "^3.18.0",
+    "react-native-safe-area-context": "^5.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -31,7 +34,9 @@
     "eslint": "^8.19.0",
     "jest": "^29.6.3",
     "prettier": "2.8.8",
+    "prettier-plugin-tailwindcss": "^0.2.8",
     "react-test-renderer": "19.1.0",
+    "tailwindcss": "^3.4.17",
     "typescript": "5.0.4"
   },
   "engines": {
