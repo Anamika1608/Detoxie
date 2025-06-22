@@ -10,16 +10,38 @@ class ReelsMonitorService : AccessibilityService() {
     companion object {
         private const val TAG = "ReelsMonitorService"
         private const val INSTAGRAM_PACKAGE = "com.instagram.android"
+        private const val TIME_THRESHOLD = 2 * 60 * 1000L // 5 minutes in milliseconds
     }
 
-     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        val packageName = event?.packageName?.toString() ?: return
+    private var reelsStartTime: Long = 0
+    private var isInReels = false
 
-        if (packageName == INSTAGRAM_PACKAGE) {
-            val rootNode = rootInActiveWindow
-            if (rootNode != null && isReelsSectionActive(rootNode)) {
-                Log.d(TAG, "User is in Instagram Reels section")
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        val packageName = event?.packageName?.toString() ?: return
+        val rootNode = rootInActiveWindow ?: return
+
+        if (packageName == INSTAGRAM_PACKAGE && isReelsSectionActive(rootNode)) {
+            if (!isInReels) {
+                // Entering Reels section
+                isInReels = true
+                reelsStartTime = System.currentTimeMillis()
+                Log.d(TAG, "Started tracking Reels time")
             }
+
+            if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+                val timeSpent = System.currentTimeMillis() - reelsStartTime
+                if (timeSpent >= TIME_THRESHOLD) {
+                    Log.d(TAG, "User has spent 2 minutes scrolling Reels!")
+                    // Reset 
+                    // reelsStartTime = System.currentTimeMillis()
+                }
+            }
+        } else if (isInReels) {
+            // Exiting Reels section
+            isInReels = false
+            val timeSpent = System.currentTimeMillis() - reelsStartTime
+            Log.d(TAG, "Left Reels section. Time spent: ${timeSpent / 1000} seconds")
+            reelsStartTime = 0
         }
     }
 
