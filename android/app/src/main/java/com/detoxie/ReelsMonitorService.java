@@ -187,7 +187,7 @@ public class ReelsMonitorService extends AccessibilityService {
     private boolean isReelsSectionActive(AccessibilityNodeInfo node) {
         if (node == null) return false;
 
-        if (node.getText() != null && node.getText().toString().toLowerCase().contains("reels")) {
+        if (node.getText() != null && (node.getText().toString().toLowerCase().contains("reels") || node.getText().toString().toLowerCase().contains("explore"))) {
             return true;
         }
 
