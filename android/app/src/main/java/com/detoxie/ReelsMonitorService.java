@@ -13,6 +13,14 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.facebook.react.ReactApplication;
+import com.facebook.react.ReactNativeHost;
+import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
+
+
 public class ReelsMonitorService extends AccessibilityService {
     private static final String TAG = "ReelsMonitorService";
     private static final String INSTAGRAM_PACKAGE = "com.instagram.android";
@@ -24,6 +32,21 @@ public class ReelsMonitorService extends AccessibilityService {
     private String lastKnownPackage = "";  // Track the last known package before overlay
     private WindowManager windowManager;
     private View overlayView;
+
+    // private void sendEventToReactNative(String eventName, WritableMap params) {
+    //     try {
+    //         ReactInstanceManager reactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
+    //         ReactContext reactContext = reactInstanceManager.getCurrentReactContext();
+    //         if (reactContext != null) {
+    //             reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+    //                 .emit(eventName, params);
+    //         } else {
+    //             Log.w(TAG, "ReactContext is null, cannot send event: " + eventName);
+    //         }
+    //     } catch (Exception e) {
+    //         Log.e(TAG, "Failed to send event to React Native: " + eventName, e);
+    //     }
+    // }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
