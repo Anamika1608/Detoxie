@@ -1,15 +1,14 @@
-import { useColorScheme, View, Text } from 'react-native';
-import "./global.css"
+import React from 'react';
+import { SafeAreaView } from 'react-native';
+import ReelsTrackerScreen from './src/screens/ReelsTrackerScreen';
 
-function App() {
-  
+const App: React.FC = () => {
+
   return (
-    <View className="flex-1 items-center justify-center bg-white">
-      <Text className="text-3xl font-bold text-blue-500">
-        Hey there!!!
-      </Text>
-    </View>
+    <SafeAreaView className="flex-1 bg-white">
+      <ReelsTrackerScreen />
+    </SafeAreaView>
   );
-}
+};
 
 export default App;
