@@ -16,8 +16,12 @@ function PermissionScreen() {
         requestOverlayPermission,
     } = usePermissionTracker();
 
+    const bothPermissionsGranted = hasAccessibilityPermission && hasOverlayPermission;
+
     const handleContinue = () => {
-        console.log("fghj")
+        if (bothPermissionsGranted) {
+            console.log("Both permissions granted, continuing...")
+        }
     }
 
     return (
@@ -64,11 +68,16 @@ function PermissionScreen() {
 
                 <Image
                     source={permissions}
-                    className="self-center -ml-6"
+                    className=""
                     resizeMode="contain"
                 />
 
-                <CustomButton onPress={handleContinue} title='Allow & Continue' className='mt-0' />
+                <CustomButton 
+                    onPress={handleContinue} 
+                    title='Continue' 
+                    className='mt-0'
+                    disabled={!bothPermissionsGranted}
+                />
             </ScrollView>
         </SafeAreaView>
     )
