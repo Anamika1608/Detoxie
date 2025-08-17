@@ -10,12 +10,8 @@ const ReelsTrackerScreen = () => {
     reelsStatus,
     currentSessionTime,
     totalTimeSpent,
-    hasAccessibilityPermission,
-    hasOverlayPermission,
     isMonitoring,
     formatTime,
-    requestAccessibilityPermission,
-    requestOverlayPermission
   } = useReelsTracker();
 
   return (
@@ -27,19 +23,7 @@ const ReelsTrackerScreen = () => {
         totalTimeSpent={totalTimeSpent}
         formatTime={formatTime}
       />
-      <View className="mb-5 mx-4 p-4 bg-white rounded-xl shadow">
-        <Text className="text-lg font-semibold text-gray-800 mb-3">Permissions:</Text>
-        <PermissionCard
-          title="Accessibility Service"
-          granted={hasAccessibilityPermission}
-          onRequest={requestAccessibilityPermission}
-        />
-        <PermissionCard
-          title="Overlay Permission"
-          granted={hasOverlayPermission}
-          onRequest={requestOverlayPermission}
-        />
-      </View>
+      
     </View>
   );
 };

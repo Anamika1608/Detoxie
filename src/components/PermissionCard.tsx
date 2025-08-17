@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { ThemedText } from '../ui/ThemedText';
 
 export const PermissionCard = ({
   title,
@@ -11,16 +12,19 @@ export const PermissionCard = ({
   onRequest: () => void;
 }) => (
   <View className="mb-3">
-    <Text className="text-sm text-gray-700 mb-1">{title}</Text>
-    <View className="flex-row items-center justify-between">
-      <Text className={`text-sm font-medium ${granted ? 'text-emerald-500' : 'text-red-500'}`}>
-        {granted ? 'Granted' : 'Not Granted'}
-      </Text>
+    <View className="flex-row items-center justify-between mb-1">
+      <ThemedText className="text-lg text-[#4C4B7E] flex-1 mr-3">{title}</ThemedText>
       {!granted && (
-        <TouchableOpacity className="bg-blue-500 px-4 py-1.5 rounded" onPress={onRequest}>
-          <Text className="text-white text-xs font-medium">Request</Text>
+        <TouchableOpacity 
+          className="bg-[#4C4B7E] px-4 py-2 rounded-xl" 
+          onPress={onRequest}
+        >
+          <ThemedText className="text-white text-sm font-medium">Request</ThemedText>
         </TouchableOpacity>
       )}
     </View>
+    <ThemedText className={`text-sm font-medium ${granted ? 'text-emerald-500' : 'text-red-500'}`}>
+      {granted ? 'Granted' : 'Not Granted'}
+    </ThemedText>
   </View>
 );

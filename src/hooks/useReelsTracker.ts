@@ -18,14 +18,12 @@ export const useReelsTracker = () => {
   const [reelsStatus, setReelsStatus] = useState('Initializing...');
   const [currentSessionTime, setCurrentSessionTime] = useState(0);
   const [totalTimeSpent, setTotalTimeSpent] = useState(0);
-  const [hasAccessibilityPermission, setHasAccessibilityPermission] = useState(false);
-  const [hasOverlayPermission, setHasOverlayPermission] = useState(false);
+
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [dbHelper] = useState(new DatabaseHelper());
 
   useEffect(() => {
     initializeDatabase();
-    checkPermissions();
   }, []);
 
   useEffect(() => {
@@ -59,33 +57,6 @@ export const useReelsTracker = () => {
     setTotalTimeSpent(totalTime);
   };
 
-  const checkPermissions = async () => {
-    const accessibilityResult = await ReelsMonitorModule.checkAccessibilityPermission();
-    const overlayResult = await ReelsMonitorModule.checkOverlayPermission();
-
-    setHasAccessibilityPermission(accessibilityResult);
-    setHasOverlayPermission(overlayResult);
-
-    if (accessibilityResult && overlayResult) startMonitoring();
-    else setReelsStatus('Permissions Required');
-  };
-
-  const requestAccessibilityPermission = async () => {
-    await ReelsMonitorModule.requestAccessibilityPermission();
-    Alert.alert('Enable accessibility service for this app and return.');
-  };
-
-  const requestOverlayPermission = async () => {
-    await ReelsMonitorModule.requestOverlayPermission();
-    Alert.alert('Allow overlay permission for this app and return.');
-  };
-
-  const startMonitoring = async () => {
-    await ReelsMonitorModule.startMonitoring();
-    setIsMonitoring(true);
-    setReelsStatus('Monitoring Active');
-  };
-
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -97,11 +68,7 @@ export const useReelsTracker = () => {
     reelsStatus,
     currentSessionTime,
     totalTimeSpent,
-    hasAccessibilityPermission,
-    hasOverlayPermission,
     isMonitoring,
-    formatTime,
-    requestAccessibilityPermission,
-    requestOverlayPermission
+    formatTime
   };
 };

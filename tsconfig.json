@@ -2,6 +2,7 @@
   "extends": "@react-native/typescript-config",
   "include": [
     "src",
-    "declarations.d.ts"
+    "declarations.d.ts",
+    "nativewind-env.d.ts"
   ]
 }

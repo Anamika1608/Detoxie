@@ -4,10 +4,13 @@ import welcome from "../assets/illustrations/welcome.png";
 import topBlob from "../assets/vectors/topBlob.png";
 import bottomLeftBlob from "../assets/vectors/bottomLeftBlob.png";
 import CustomButton from '../ui/CustomButton';
+import { useNavigation } from '@react-navigation/native';
+import { ThemedText } from '../ui/ThemedText';
 
 const DetoxieWelcomeScreen: React.FC = () => {
+  const navigation = useNavigation();
   const handleGetStarted = () => {
-    console.log("hey")
+    navigation.navigate('Permission');
   }
 
   return (
@@ -15,12 +18,12 @@ const DetoxieWelcomeScreen: React.FC = () => {
 
       <Image
         source={topBlob}
-        className="absolute -top-44 -left-60 scale-[0.4] rotate-12 shadow-sm"
+        className="absolute -top-56 -left-60 scale-[0.4] rotate-12 shadow-sm"
         resizeMode="contain"
       />
 
       <View
-        className="absolute top-24 right-7 w-[130px] h-[130px] bg-[#FFBF75] rounded-full"
+        className="absolute top-20 right-7 w-[130px] h-[130px] bg-[#FFBF75] rounded-full"
       />
 
       <Image
@@ -38,17 +41,16 @@ const DetoxieWelcomeScreen: React.FC = () => {
       />
 
       {/* Title */}
-      <Text className="text-3xl text-center mt-6 text-[#4C4B7E] "
-        style={{ fontFamily: 'YoungSerif-Regular' }}>
+      <ThemedText className="text-3xl text-center mt-6 text-[#4C4B7E] ">
         Welcome to Detoxie
-      </Text>
+      </ThemedText>
 
-      <Text className='text-xl text-center mt-5 text-[#4C4B7E]'
+      <ThemedText className='text-xl text-center mt-5 text-[#4C4B7E]'
         style={{ fontFamily: 'DMSans-SemiBold' }}>
         A step towards a healthier digital life.
-      </Text>
+      </ThemedText>
 
-      <CustomButton onPress={handleGetStarted} title='Get Started' className='mt-10'/>
+      <CustomButton onPress={handleGetStarted} title='Get Started' className='mt-10' />
 
     </View>
   );

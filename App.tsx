@@ -1,20 +1,20 @@
-import React from 'react';
-import { SafeAreaView, StatusBar } from 'react-native';
-import ReelsTrackerScreen from './src/screens/ReelsTrackerScreen';
+import * as React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import WelcomeScreen from './src/screens/WelcomeScreen';
-import { verifyInstallation } from 'nativewind';
-import "./global.css"
+import ReelsTrackerScreen from './src/screens/ReelsTrackerScreen';
+import PermissionScreen from './src/screens/PermissionScreen';
+const Stack = createNativeStackNavigator();
 
-const App: React.FC = () => {
-  const result = verifyInstallation();
-  console.log('NativeWind verifyInstallation:', result);
+import "./global.css"; 
+
+export default function App() {
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <StatusBar barStyle="dark-content" backgroundColor="white" translucent />
-      <WelcomeScreen />
-      {/* <ReelsTrackerScreen /> */}
-    </SafeAreaView>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Home" component={WelcomeScreen} />
+        <Stack.Screen name="Permission" component={PermissionScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
-};
-
-export default App;
+}
