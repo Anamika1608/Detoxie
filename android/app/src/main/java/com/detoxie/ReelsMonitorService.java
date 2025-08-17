@@ -2,6 +2,7 @@ package com.detoxie;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.provider.Settings;
 import android.util.Log;
@@ -13,40 +14,46 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.facebook.react.ReactApplication;
-import com.facebook.react.ReactNativeHost;
-import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.Arguments;
-import com.facebook.react.modules.core.DeviceEventManagerModule;
-
 
 public class ReelsMonitorService extends AccessibilityService {
     private static final String TAG = "ReelsMonitorService";
     private static final String INSTAGRAM_PACKAGE = "com.instagram.android";
-    private static final long TIME_THRESHOLD = 2 * 60 * 1000;
+    private static final long TIME_THRESHOLD = 2 * 60 * 1000; // 2 minutes
+    private static final String PREFS_NAME = "ReelsMonitorPrefs";
+    private static final String TOTAL_TIME_KEY = "total_time_spent";
+    private static final String SESSION_COUNT_KEY = "session_count";
+    private static final String LAST_SESSION_DATE_KEY = "last_session_date";
+    
     private long reelsStartTime = 0;
     private boolean isInReels = false;
-    private boolean hasExceededThreshold = false;  // Track if user has exceeded time limit
-    private boolean isOverlayShowing = false;  // Track if overlay is currently displayed
-    private String lastKnownPackage = "";  // Track the last known package before overlay
+    private boolean hasExceededThreshold = false;
+    private boolean isOverlayShowing = false;
+    private String lastKnownPackage = "";
     private WindowManager windowManager;
     private View overlayView;
+    private SharedPreferences prefs;
 
-    // private void sendEventToReactNative(String eventName, WritableMap params) {
-    //     try {
-    //         ReactInstanceManager reactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
-    //         ReactContext reactContext = reactInstanceManager.getCurrentReactContext();
-    //         if (reactContext != null) {
-    //             reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-    //                 .emit(eventName, params);
-    //         } else {
-    //             Log.w(TAG, "ReactContext is null, cannot send event: " + eventName);
-    //         }
-    //     } catch (Exception e) {
-    //         Log.e(TAG, "Failed to send event to React Native: " + eventName, e);
-    //     }
-    // }
+    @Override
+    protected void onServiceConnected() {
+        super.onServiceConnected();
+        Log.d(TAG, "Service connected");
+        prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        
+        sendEventToReactNative("ReelsEvent", createEventMap("Service Connected", 0));
+        
+        if (!Settings.canDrawOverlays(this)) {
+            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:" + getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            try {
+                startActivity(intent);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to launch overlay permission settings", e);
+            }
+        }
+    }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
@@ -54,23 +61,21 @@ public class ReelsMonitorService extends AccessibilityService {
 
         String packageName = event.getPackageName().toString();
         
-        // If overlay is showing, we need to handle this carefully
+        // If overlay is showing, handle carefully
         if (isOverlayShowing) {
-            // Only check for genuine app switches, not overlay-induced package changes
             if (!INSTAGRAM_PACKAGE.equals(packageName) && 
-                !packageName.equals(getPackageName()) && // Ignore our own app/overlay
-                !packageName.equals("android") && // Ignore system UI changes
-                !packageName.equals("com.android.systemui")) { // Ignore system UI
+                !packageName.equals(getPackageName()) &&
+                !packageName.equals("android") &&
+                !packageName.equals("com.android.systemui")) {
                 
-                // This is a genuine app switch - remove overlay
                 Log.d(TAG, "User genuinely switched to another app: " + packageName);
                 removeOverlay();
                 resetStates();
+                sendEventToReactNative("ReelsEvent", createEventMap("Left Instagram", getTotalTimeSpent()));
             }
             return; 
         }
         
-        // Update last known package only when overlay is not showing
         if (!isOverlayShowing) {
             lastKnownPackage = packageName;
         }
@@ -79,52 +84,108 @@ public class ReelsMonitorService extends AccessibilityService {
         if (!INSTAGRAM_PACKAGE.equals(packageName)) {
             Log.d(TAG, "User has exited Instagram app to: " + packageName);
             resetStates();
+            sendEventToReactNative("ReelsEvent", createEventMap("Left Instagram", getTotalTimeSpent()));
             return;
         }
 
         AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-
-        // Check if we're in Instagram and if Reels section is active
         boolean reelsSectionActive = rootNode != null && isReelsSectionActive(rootNode);
 
         if (reelsSectionActive) {
-            // User is in Reels section
             if (!isInReels) {
-                // User just entered Reels section
                 if (hasExceededThreshold) {
-                    // Show overlay if threshold was previously exceeded
                     showOverlay(TIME_THRESHOLD);
                     return; 
                 } else {
-                    // Start tracking time
                     isInReels = true;
                     reelsStartTime = System.currentTimeMillis();
                     Log.d(TAG, "Started tracking Reels time");
+                    sendEventToReactNative("ReelsEvent", createEventMap("Entered Reels", getTotalTimeSpent()));
                 }
             } else {
-                // User is already in Reels, check if threshold exceeded during scrolling
-                long timeSpent = System.currentTimeMillis() - reelsStartTime;
-                if (timeSpent >= TIME_THRESHOLD && !hasExceededThreshold) {
+                // Send periodic updates while in reels
+                long currentSessionTime = System.currentTimeMillis() - reelsStartTime;
+                sendEventToReactNative("ReelsTimeUpdate", createTimeUpdateMap(currentSessionTime));
+                
+                if (currentSessionTime >= TIME_THRESHOLD && !hasExceededThreshold) {
                     hasExceededThreshold = true;
                     Log.d(TAG, "User has spent 2 minutes scrolling Reels!");
-                    showOverlay(timeSpent);
-                    // Stop tracking while overlay is shown
+                    
+                    // Update total time in preferences
+                    updateTotalTimeSpent(currentSessionTime);
+                    
+                    showOverlay(currentSessionTime);
                     isInReels = false;
                 }
             }
         } else {
-            // User left Reels section but still in Instagram
             if (isInReels) {
                 isInReels = false;
-                long timeSpent = System.currentTimeMillis() - reelsStartTime;
-                Log.d(TAG, "Left Reels section. Time spent: " + (timeSpent / 1000) + " seconds");
+                long sessionTime = System.currentTimeMillis() - reelsStartTime;
+                updateTotalTimeSpent(sessionTime);
+                Log.d(TAG, "Left Reels section. Time spent: " + (sessionTime / 1000) + " seconds");
+                sendEventToReactNative("ReelsEvent", createEventMap("Left Reels", getTotalTimeSpent()));
                 reelsStartTime = 0;
             }
         }
     }
     
+    private WritableMap createEventMap(String status, long totalTime) {
+        WritableMap map = Arguments.createMap();
+        map.putString("status", status);
+        map.putDouble("totalTimeSpent", totalTime / 1000.0); // Convert to seconds
+        return map;
+    }
+    
+    private WritableMap createTimeUpdateMap(long currentSessionTime) {
+        WritableMap map = Arguments.createMap();
+        map.putDouble("currentSessionTime", currentSessionTime / 1000.0);
+        map.putDouble("totalTimeSpent", getTotalTimeSpent() / 1000.0);
+        return map;
+    }
+    
+    private void updateTotalTimeSpent(long sessionTime) {
+        long totalTime = prefs.getLong(TOTAL_TIME_KEY, 0) + sessionTime;
+        int sessionCount = prefs.getInt(SESSION_COUNT_KEY, 0) + 1;
+        String currentDate = java.text.DateFormat.getDateInstance().format(new java.util.Date());
+        
+        prefs.edit()
+            .putLong(TOTAL_TIME_KEY, totalTime)
+            .putInt(SESSION_COUNT_KEY, sessionCount)
+            .putString(LAST_SESSION_DATE_KEY, currentDate)
+            .apply();
+            
+        Log.d(TAG, "Updated total time: " + (totalTime / 1000) + " seconds, Session count: " + sessionCount);
+        
+        // Send updated stats to React Native
+        WritableMap statsMap = Arguments.createMap();
+        statsMap.putDouble("totalTime", totalTime / 1000.0);
+        statsMap.putInt("sessionCount", sessionCount);
+        statsMap.putString("lastSessionDate", currentDate);
+        sendEventToReactNative("ReelsStatsUpdate", statsMap);
+    }
+    
+    private long getTotalTimeSpent() {
+        return prefs.getLong(TOTAL_TIME_KEY, 0);
+    }
+    
+    private void sendEventToReactNative(String eventName, WritableMap params) {
+        try {
+            ReelsMonitorModule module = ReelsMonitorModule.getInstance();
+            if (module != null) {
+                module.sendEventToReactNative(eventName, params);
+            } else {
+                Log.w(TAG, "ReelsMonitorModule instance is null");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to send event to React Native: " + eventName, e);
+        }
+    }
+    
     private void resetStates() {
         if (isInReels) {
+            long sessionTime = System.currentTimeMillis() - reelsStartTime;
+            updateTotalTimeSpent(sessionTime);
             isInReels = false;
             reelsStartTime = 0;
         }
@@ -148,7 +209,6 @@ public class ReelsMonitorService extends AccessibilityService {
         }
 
         if (overlayView != null) {
-            Log.d(TAG, "remove overlay when overlayView is not null");
             removeOverlay();
         }
 
@@ -163,18 +223,18 @@ public class ReelsMonitorService extends AccessibilityService {
         Button closeButton = overlayView.findViewById(R.id.close_button);
         closeButton.setOnClickListener(v -> {
             removeOverlay();
-            // Reset threshold flag when user dismisses overlay
             hasExceededThreshold = false;
-            // Allow user to continue using Reels - restart tracking
+            
+            // Check if still in reels and restart tracking
             AccessibilityNodeInfo currentRoot = getRootInActiveWindow();
             if (currentRoot != null && isReelsSectionActive(currentRoot)) {
                 isInReels = true;
                 reelsStartTime = System.currentTimeMillis();
                 Log.d(TAG, "Restarted tracking after overlay dismissed");
+                sendEventToReactNative("ReelsEvent", createEventMap("Resumed Reels", getTotalTimeSpent()));
             }
         });
 
-        // Define window parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -184,11 +244,11 @@ public class ReelsMonitorService extends AccessibilityService {
         );
         params.gravity = android.view.Gravity.CENTER;
 
-        // Add the view to the window manager
         try {
             windowManager.addView(overlayView, params);
             isOverlayShowing = true;
             Log.d(TAG, "Overlay displayed");
+            sendEventToReactNative("ReelsEvent", createEventMap("Overlay Shown", getTotalTimeSpent()));
         } catch (Exception e) {
             Log.e(TAG, "Failed to display overlay", e);
         }
@@ -210,7 +270,9 @@ public class ReelsMonitorService extends AccessibilityService {
     private boolean isReelsSectionActive(AccessibilityNodeInfo node) {
         if (node == null) return false;
 
-        if (node.getText() != null && (node.getText().toString().toLowerCase().contains("reels") || node.getText().toString().toLowerCase().contains("explore"))) {
+        if (node.getText() != null && 
+            (node.getText().toString().toLowerCase().contains("reels") || 
+             node.getText().toString().toLowerCase().contains("explore"))) {
             return true;
         }
 
@@ -219,7 +281,6 @@ public class ReelsMonitorService extends AccessibilityService {
                 return true;
             }
         }
-
         return false;
     }
 
@@ -227,22 +288,6 @@ public class ReelsMonitorService extends AccessibilityService {
     public void onInterrupt() {
         Log.d(TAG, "Service interrupted");
         removeOverlay();
-    }
-
-    @Override
-    protected void onServiceConnected() {
-        super.onServiceConnected();
-        Log.d(TAG, "Service connected");
-        if (!Settings.canDrawOverlays(this)) {
-            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:" + getPackageName()));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            try {
-                startActivity(intent);
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to launch overlay permission settings", e);
-            }
-        }
     }
 
     @Override
