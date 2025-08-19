@@ -6,5 +6,5 @@ export const ThemedText: React.FC<TextProps> = ({ style, children, ...props }) =
     <Text style={[{ fontFamily: "DMSans-SemiBold" }, style]} {...props}>
       {children}
     </Text>
-  );
+  ); 
 };

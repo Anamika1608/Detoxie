@@ -41,9 +41,10 @@ const DetoxieWelcomeScreen: React.FC = () => {
       />
 
       {/* Title */}
-      <ThemedText className="text-3xl text-center mt-6 text-[#4C4B7E] ">
+      <Text className="text-3xl text-center mt-6 text-[#4C4B7E] "
+        style={{ fontFamily: 'YoungSerif-Regular' }}>
         Welcome to Detoxie
-      </ThemedText>
+      </Text>
 
       <ThemedText className='text-xl text-center mt-5 text-[#4C4B7E]'
         style={{ fontFamily: 'DMSans-SemiBold' }}>

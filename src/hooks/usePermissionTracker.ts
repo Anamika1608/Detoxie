@@ -9,7 +9,11 @@ function usePermissionTracker() {
     isMonitoring,
     requestAccessibilityPermission,
     requestOverlayPermission,
-    initialize
+    initialize,
+    showPermissionModal, 
+    permissionModalType,
+    handlePermissionModalProceed,
+    handlePermissionModalCancel 
   } = usePermissionStore();
 
   useEffect(() => {
@@ -22,7 +26,11 @@ function usePermissionTracker() {
     reelsStatus,
     isMonitoring,
     requestAccessibilityPermission,
-    requestOverlayPermission
+    requestOverlayPermission,
+    showPermissionModal, 
+    permissionModalType,
+    handlePermissionModalProceed,
+    handlePermissionModalCancel 
   };
 }
 

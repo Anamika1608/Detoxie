@@ -14,6 +14,10 @@ function PermissionScreen() {
         hasOverlayPermission,
         requestAccessibilityPermission,
         requestOverlayPermission,
+        showPermissionModal,
+        permissionModalType,
+        handlePermissionModalProceed,
+        handlePermissionModalCancel
     } = usePermissionTracker();
 
     const bothPermissionsGranted = hasAccessibilityPermission && hasOverlayPermission;
@@ -56,11 +60,14 @@ function PermissionScreen() {
                 <View className="mt-5">
                     <PermissionCard
                         title="Accessibility Service"
+                        permissionType="accessibility"
                         granted={hasAccessibilityPermission}
                         onRequest={requestAccessibilityPermission}
+
                     />
                     <PermissionCard
                         title="Overlay Permission"
+                        permissionType="overlay"
                         granted={hasOverlayPermission}
                         onRequest={requestOverlayPermission}
                     />
@@ -68,13 +75,13 @@ function PermissionScreen() {
 
                 <Image
                     source={permissions}
-                    className=""
+                    className="self-center"
                     resizeMode="contain"
                 />
 
-                <CustomButton 
-                    onPress={handleContinue} 
-                    title='Continue' 
+                <CustomButton
+                    onPress={handleContinue}
+                    title='Allow & Continue'
                     className='mt-0'
                     disabled={!bothPermissionsGranted}
                 />

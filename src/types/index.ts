@@ -14,3 +14,5 @@ export interface DailyStats {
     session_count: number;
     avg_session_duration: number;
 }
+
+export type PermissionType = 'accessibility' | 'overlay';
