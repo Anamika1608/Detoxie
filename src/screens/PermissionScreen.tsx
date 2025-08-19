@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, Image } from 'react-native'
+import { View, SafeAreaView, ScrollView, Image } from 'react-native'
 import { PermissionCard } from '../components/PermissionCard'
 import usePermissionTracker from '../hooks/usePermissionTracker';
 import permissions from "../assets/illustrations/permissions.png";
@@ -8,16 +8,11 @@ import CustomButton from '../ui/CustomButton';
 import { ThemedText } from '../ui/ThemedText';
 
 function PermissionScreen() {
-
     const {
         hasAccessibilityPermission,
         hasOverlayPermission,
         requestAccessibilityPermission,
         requestOverlayPermission,
-        showPermissionModal,
-        permissionModalType,
-        handlePermissionModalProceed,
-        handlePermissionModalCancel
     } = usePermissionTracker();
 
     const bothPermissionsGranted = hasAccessibilityPermission && hasOverlayPermission;
@@ -63,7 +58,6 @@ function PermissionScreen() {
                         permissionType="accessibility"
                         granted={hasAccessibilityPermission}
                         onRequest={requestAccessibilityPermission}
-
                     />
                     <PermissionCard
                         title="Overlay Permission"

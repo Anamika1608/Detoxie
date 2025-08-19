@@ -18,7 +18,6 @@ interface ModalContent {
   subtitle: string;
   description: string;
   steps: string[];
-  icon: string;
 }
 
 interface PermissionModalProps {
@@ -37,12 +36,11 @@ const getModalContent = (type: PermissionType): ModalContent => {
         description: 'This permission allows Detoxie to track when you\'re using social media apps and help you stay focused.',
         steps: [
           'Tap "Open Settings" below',
-          'Find "Detoxie" in the accessibility list',
-          'Toggle the switch to ON',
+          'Click on Downloaded apps',
+          'Find "Detoxie" and toggle ON',
           'Confirm in the dialog that appears',
           'Return to this app'
         ],
-        icon: '🔒',
       };
     case 'overlay':
       return {
@@ -54,7 +52,6 @@ const getModalContent = (type: PermissionType): ModalContent => {
           'Find "Detoxie" and toggle ON',
           'Return to this app'
         ],
-        icon: '📱',
       };
     default:
       return {
@@ -62,7 +59,6 @@ const getModalContent = (type: PermissionType): ModalContent => {
         subtitle: '',
         description: '',
         steps: [],
-        icon: '',
       };
   }
 };

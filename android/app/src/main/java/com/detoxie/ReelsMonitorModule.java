@@ -107,21 +107,16 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
             Log.e(TAG, "Failed to open overlay permission settings", e);
             promise.reject("ERROR", "Failed to open overlay permission settings: " + e.getMessage());
         }
-    }
+    }  
 
     @ReactMethod
     public void startMonitoring(Promise promise) {
         try {
             boolean accessibilityEnabled = isAccessibilityServiceEnabled();
-            boolean overlayEnabled = Settings.canDrawOverlays(getReactApplicationContext());
-            
-            if (!accessibilityEnabled) {
-                promise.reject("PERMISSION_ERROR", "Accessibility permission not granted");
-                return;
-            }
-            
-            if (!overlayEnabled) {
-                promise.reject("PERMISSION_ERROR", "Overlay permission not granted");
+            boolean overlayEnabled = isOverlayPermissionGranted();
+
+            if (!accessibilityEnabled || !overlayEnabled) {
+                promise.reject("PERMISSION_ERROR", "Accessibility or overlay permission not granted");
                 return;
             }
             
@@ -140,5 +135,9 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
         );
         
         return enabledServices != null && enabledServices.contains(service);
+    }
+
+    private boolean isOverlayPermissionGranted() {
+        return Settings.canDrawOverlays(getReactApplicationContext());
     }
 }

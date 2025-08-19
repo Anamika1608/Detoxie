@@ -42,17 +42,6 @@ public class ReelsMonitorService extends AccessibilityService {
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         
         sendEventToReactNative("ReelsEvent", createEventMap("Service Connected", 0));
-        
-        if (!Settings.canDrawOverlays(this)) {
-            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:" + getPackageName()));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            try {
-                startActivity(intent);
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to launch overlay permission settings", e);
-            }
-        }
     }
 
     @Override

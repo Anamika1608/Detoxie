@@ -1,20 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
-  TouchableOpacity,
-  AppState,
-  AppStateStatus
+  TouchableOpacity
 } from 'react-native';
 import { ThemedText } from '../ui/ThemedText';
 import { PermissionModal } from './PermissionModal';
 import { PermissionType } from '../types';
+import usePermissionTracker from '../hooks/usePermissionTracker'; 
 
 interface PermissionCardProps {
   title: string;
   granted: boolean;
   onRequest: () => Promise<void>;
   permissionType: PermissionType;
-  onPermissionChange?: (granted: boolean) => void;
 }
 
 export const PermissionCard: React.FC<PermissionCardProps> = ({
@@ -22,45 +20,18 @@ export const PermissionCard: React.FC<PermissionCardProps> = ({
   granted,
   onRequest,
   permissionType,
-  onPermissionChange
 }) => {
-  const [showModal, setShowModal] = useState(false);
+  const {
+    showPermissionModal,
+    permissionModalType,
+    handlePermissionModalProceed,
+    handlePermissionModalCancel
+  } = usePermissionTracker();
+
+  const isModalVisible = showPermissionModal && permissionModalType === permissionType;
 
   const handleRequestPress = () => {
-    setShowModal(true);
-  };
-
-  const handleProceed = async () => {
-    try {
-      await onRequest();
-      setShowModal(false);
-
-      // Setup listener to check permissions when user returns
-      const handleAppStateChange = (nextAppState: AppStateStatus) => {
-        if (nextAppState === 'active') {
-          // You can call a permission check function here
-          // For now, we'll just close the modal
-          setTimeout(() => {
-            onPermissionChange?.(true); // Optimistically update - you should check actual permission
-          }, 500);
-        }
-      };
-
-      const subscription = AppState.addEventListener('change', handleAppStateChange);
-
-      // Clean up listener after 2 minutes
-      setTimeout(() => {
-        subscription?.remove();
-      }, 120000);
-
-    } catch (error) {
-      console.error('Error requesting permission:', error);
-      // Handle error - maybe show error message
-    }
-  };
-
-  const handleCancel = () => {
-    setShowModal(false);
+    onRequest(); 
   };
 
   return (
@@ -85,12 +56,11 @@ export const PermissionCard: React.FC<PermissionCardProps> = ({
         {granted ? 'Granted' : 'Not Granted'}
       </ThemedText>
 
-      {/* Permission Modal */}
       <PermissionModal
-        visible={showModal}
+        visible={isModalVisible}
         permissionType={permissionType}
-        onCancel={handleCancel}
-        onProceed={handleProceed}
+        onCancel={handlePermissionModalCancel}
+        onProceed={handlePermissionModalProceed}
       />
     </View>
   );
