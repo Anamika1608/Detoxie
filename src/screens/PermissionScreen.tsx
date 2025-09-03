@@ -42,44 +42,50 @@ function PermissionScreen() {
 
             <View className="absolute bg-[#F2E9D3] -right-32 -left-56 top-16 rounded-t-full h-full" />
 
-            {/* Foreground content */}
-            <ScrollView className="flex-1 px-6 pt-8">
-                {/* Header text */}
-                <View className="mt-20">
-                    <ThemedText className="text-black text-3xl leading-tight">
-                        For the best detox{'\n'}experience, we need a few permissions!
-                    </ThemedText>
-                </View>
+            {/* Main content area */}
+            <View className="flex-1">
+                {/* Scrollable content */}
+                <ScrollView className="flex-1 px-6 pt-8">
+                    {/* Header text */}
+                    <View className="mt-20">
+                        <ThemedText className="text-black text-3xl leading-tight">
+                            For the best detox{'\n'}experience, we need a few permissions!
+                        </ThemedText>
+                    </View>
 
-                {/* Permission cards container */}
-                <View className="mt-5">
-                    <PermissionCard
-                        title="Accessibility Service"
-                        permissionType="accessibility"
-                        granted={hasAccessibilityPermission}
-                        onRequest={requestAccessibilityPermission}
+                    {/* Permission cards container */}
+                    <View className="mt-5 mb-6">
+                        <PermissionCard
+                            title="Accessibility Service"
+                            permissionType="accessibility"
+                            granted={hasAccessibilityPermission}
+                            onRequest={requestAccessibilityPermission}
+                        />
+                        <PermissionCard
+                            title="Overlay Permission"
+                            permissionType="overlay"
+                            granted={hasOverlayPermission}
+                            onRequest={requestOverlayPermission}
+                        />
+                    </View>
+                </ScrollView>
+
+                {/* Bottom fixed content */}
+                <View className="px-6 pb-6">
+                    <Image
+                        source={permissions}
+                        className="self-center mb-4"
+                        resizeMode="contain"
                     />
-                    <PermissionCard
-                        title="Overlay Permission"
-                        permissionType="overlay"
-                        granted={hasOverlayPermission}
-                        onRequest={requestOverlayPermission}
+
+                    <CustomButton
+                        onPress={handleContinue}
+                        title='Allow & Continue'
+                        className='mt-0'
+                        disabled={!bothPermissionsGranted}
                     />
                 </View>
-
-                <Image
-                    source={permissions}
-                    className="self-center"
-                    resizeMode="contain"
-                />
-
-                <CustomButton
-                    onPress={handleContinue}
-                    title='Allow & Continue'
-                    className='mt-0'
-                    disabled={!bothPermissionsGranted}
-                />
-            </ScrollView>
+            </View>
         </SafeAreaView>
     )
 }
