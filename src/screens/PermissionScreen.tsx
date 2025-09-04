@@ -6,8 +6,11 @@ import permissions from "../assets/illustrations/permissions.png";
 import roughCircle from "../assets/vectors/roughCircle.png";
 import CustomButton from '../ui/CustomButton';
 import { ThemedText } from '../ui/ThemedText';
+import { useNavigation } from '@react-navigation/native';
 
 function PermissionScreen() {
+    const navigation = useNavigation();
+
     const {
         hasAccessibilityPermission,
         hasOverlayPermission,
@@ -18,9 +21,7 @@ function PermissionScreen() {
     const bothPermissionsGranted = hasAccessibilityPermission && hasOverlayPermission;
 
     const handleContinue = () => {
-        if (bothPermissionsGranted) {
-            console.log("Both permissions granted, continuing...")
-        }
+        navigation.navigate('Home');
     }
 
     return (
@@ -40,7 +41,7 @@ function PermissionScreen() {
                 />
             </View>
 
-            <View className="absolute bg-[#F2E9D3] -right-32 -left-56 top-16 rounded-t-full h-full" />
+            {/* <View className="absolute bg-[#F2E9D3] -right-32 -left-56 top-16 rounded-t-full h-full" /> */}
 
             {/* Main content area */}
             <View className="flex-1">
