@@ -4,9 +4,13 @@ import ActionCard from '../components/ActionCard';
 import home from "../assets/illustrations/home.png";
 import { ThemedText } from '../ui/ThemedText';
 import homeScreen from "../assets/vectors/homeScreen.png"
+import { useNavigation } from '@react-navigation/native';
 
 function HomeScreen() {
+    const navigation = useNavigation();
+
     const handleSetTimer = () => {
+        navigation.navigate('SetTimer');
         // Handle set timer action
         console.log('Set timer pressed');
     };
@@ -29,11 +33,12 @@ function HomeScreen() {
                     className="absolute -top-56 -left-60 scale-[0.4] rotate-12 shadow-sm"
                     resizeMode="cover"
                 />
+                
                 {/* Main content */}
-                <View className="flex-1 pt-16 px-4">
+                <View className="flex-1 pt-12 px-4">
                     {/* Header text */}
                     <View className="mb-1 px-2 mr-0">
-                        <ThemedText className="text-black text-4xl leading-10 mb-2">
+                        <ThemedText className="text-black text-4xl leading-10 mb-2 mx-4">
                             Take control of your screen time to stay productive.
                         </ThemedText>
                     </View>
@@ -48,7 +53,7 @@ function HomeScreen() {
                     </View>
 
                     {/* Action Cards */}
-                    <View className="flex-1">
+                    <View className="flex-1 gap-4">
                         <ActionCard
                             title="Set timer"
                             description="Set your limit for scrolling. Once the time's up, we'll remind you of what truly matters."
