@@ -1,16 +1,27 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { View, Text, Dimensions } from 'react-native'
 import { ThemedText } from '../ui/ThemedText'
 import CustomButton from '../ui/CustomButton'
 import Slider from '@react-native-community/slider'
 import LinearGradient from 'react-native-linear-gradient'
+import { dbHelper } from '../database'
 
 function SetTimerScreen() {
     const [timerValue, setTimerValue] = useState(10)
 
-    const handleSetTimer = () => {
-        console.log('Timer set to:', timerValue, 'minutes')
-        // Add your timer logic here
+    useEffect(() => {
+        const init = async () => {
+            await dbHelper.initializeDatabase()
+            const saved = await dbHelper.getTimerMinutes()
+            if (typeof saved === 'number') {
+                setTimerValue(saved)
+            }
+        }
+        init()
+    }, [])
+
+    const handleSetTimer = async () => {
+        await dbHelper.setTimerMinutes(timerValue)
     }
 
     return (
@@ -97,22 +108,7 @@ function SetTimerScreen() {
                     step={5}
                     minimumTrackTintColor="#4C4B7E"
                     maximumTrackTintColor="#a6a9ad"
-                    thumbTintColor="#4C4B7E"  
-                    thumbStyle={{
-                        backgroundColor: 'white',
-                        width: 24,
-                        height: 24,
-                        borderRadius: 12,
-                        elevation: 3,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 6 },
-                        shadowOpacity: 0.2,
-                        shadowRadius: 2,
-                    }}
-                    trackStyle={{
-                        height: 6,
-                        borderRadius: 3,
-                    }}
+                    thumbTintColor="#4C4B7E"
                 />
 
                 {/* Slider Labels - Properly aligned */}

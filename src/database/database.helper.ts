@@ -1,4 +1,4 @@
-import type { UsageSession, DailyStats } from '../types';
+import type { UsageSession, DailyStats, Task } from '../types';
 import { openDatabase } from './database.config';
 import { TABLES } from './database.tables';
 import SQLite from 'react-native-sqlite-storage';
@@ -17,6 +17,53 @@ export class DatabaseHelper {
         for (const query of TABLES) {
             await this.db.executeSql(query);
         }
+    }
+
+    async getTimerMinutes(): Promise<number | null> {
+        if (!this.db) throw new Error('Database not initialized');
+        const results = await this.db.executeSql('SELECT minutes FROM timer_settings ORDER BY updated_at DESC LIMIT 1');
+        if (results[0].rows.length > 0) {
+            const row = results[0].rows.item(0);
+            return row.minutes as number;
+        }
+        return null;
+    }
+
+    async setTimerMinutes(minutes: number): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        // Keep a single row; replace existing or insert new
+        const existing = await this.db.executeSql('SELECT id FROM timer_settings LIMIT 1');
+        if (existing[0].rows.length > 0) {
+            const id = existing[0].rows.item(0).id;
+            await this.db.executeSql('UPDATE timer_settings SET minutes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [minutes, id]);
+        } else {
+            await this.db.executeSql('INSERT INTO timer_settings (minutes) VALUES (?)', [minutes]);
+        }
+    }
+
+    // Tasks CRUD
+    async getAllTasks(): Promise<Task[]> {
+        if (!this.db) throw new Error('Database not initialized');
+        const results = await this.db.executeSql('SELECT * FROM tasks ORDER BY created_at DESC');
+        const rows = results[0].rows;
+        const tasks: Task[] = [];
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows.item(i);
+            tasks.push({ id: row.id, text: row.text, completed: row.completed === 1, created_at: row.created_at });
+        }
+        return tasks;
+    }
+
+    async addTask(text: string): Promise<Task> {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = await this.db.executeSql('INSERT INTO tasks (text, completed) VALUES (?, ?)', [text, 0]);
+        const insertId = result[0].insertId;
+        return { id: insertId, text, completed: false } as Task;
+    }
+
+    async deleteTask(id: number): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        await this.db.executeSql('DELETE FROM tasks WHERE id = ?', [id]);
     }
 
     async addUsageSession(
