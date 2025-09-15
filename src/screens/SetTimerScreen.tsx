@@ -8,6 +8,7 @@ import { dbHelper } from '../database'
 
 function SetTimerScreen() {
     const [timerValue, setTimerValue] = useState(10)
+    const [saveStatus, setSaveStatus] = useState('idle')
 
     useEffect(() => {
         const init = async () => {
@@ -21,7 +22,18 @@ function SetTimerScreen() {
     }, [])
 
     const handleSetTimer = async () => {
-        await dbHelper.setTimerMinutes(timerValue)
+        setSaveStatus('saving')
+        try {
+            await dbHelper.setTimerMinutes(timerValue)
+            setSaveStatus('saved')
+            
+            setTimeout(() => {
+                setSaveStatus('idle')
+            }, 500)
+        } catch (error) {
+            console.error('Error saving timer:', error)
+            setSaveStatus('idle')
+        }
     }
 
     return (
@@ -48,7 +60,7 @@ function SetTimerScreen() {
                         height: 200,
                         elevation: 5,
                         shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
+                        shadowOffset: { width: 0, y: 2 },
                         shadowOpacity: 0.1,
                         shadowRadius: 4,
                     }}
@@ -88,8 +100,16 @@ function SetTimerScreen() {
                         </ThemedText>
                         <ThemedText className="text-lg text-black font-medium">mins</ThemedText>
                     </LinearGradient>
-
                 </View>
+
+                {/* Save Status Message */}
+                {saveStatus === 'saved' && (
+                    <View className='mt-4 bg-green-100 px-4 py-2 rounded-2xl'>
+                        <ThemedText className='text-green-700 font-medium'>
+                             Timer saved successfully!
+                        </ThemedText>
+                    </View>
+                )}
             </View>
 
             {/* Slider Container */}
@@ -115,7 +135,7 @@ function SetTimerScreen() {
                 <View
                     className='flex-row justify-between'
                     style={{
-                        paddingHorizontal: 12, // This ensures labels align with track edges
+                        paddingHorizontal: 12,
                         marginTop: 4,
                     }}
                 >
