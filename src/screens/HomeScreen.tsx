@@ -17,6 +17,7 @@ function HomeScreen() {
 
     const handleAddTodo = () => {
         // Handle add to-do action
+        navigation.navigate('AddToDo');
         console.log('Add to-do pressed');
     };
 
@@ -44,10 +45,10 @@ function HomeScreen() {
                     </View>
 
                     {/* Illustration */}
-                    <View className="items-end mb-12 pr-0">
+                    <View className="items-end mb-8 pr-0">
                         <Image
                             source={home}
-                            className="w-64 h-48"
+                            className="w-72 h-48 scale-125"
                             resizeMode="contain"
                         />
                     </View>

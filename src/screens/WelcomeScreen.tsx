@@ -36,7 +36,7 @@ const DetoxieWelcomeScreen: React.FC = () => {
       {/* Main Illustration */}
       <Image
         source={welcome}
-        className="w-[250px] h-[250px] mt-40"
+        className="w-[280px] h-[280px] mt-40"
         resizeMode="contain"
       />
 

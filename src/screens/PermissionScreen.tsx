@@ -75,7 +75,7 @@ function PermissionScreen() {
                 <View className="px-6 pb-6">
                     <Image
                         source={permissions}
-                        className="self-center mb-4"
+                        className="self-center mb-4 w-[300px] h-[300px]"
                         resizeMode="contain"
                     />
 
