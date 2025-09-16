@@ -22,6 +22,8 @@ function HomeScreen() {
     };
 
     const handleCreateDream = () => {
+        navigation.navigate('AddDreamVision');
+
         // Handle create dream/vision board action
         console.log('Create dream vision pressed');
     };
@@ -71,7 +73,7 @@ function HomeScreen() {
 
                         <ActionCard
                             title="Dream Vision"
-                            description="Add photos and goals that inspire you to achieve your dreams."
+                            description="Stay inspired. Add photos that inspire you to achieve your dreams."
                             backgroundColor="#a6a5d4"
                             onPress={handleCreateDream}
                         />

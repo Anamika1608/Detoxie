@@ -12,6 +12,27 @@ export class DatabaseHelper {
         return this.db;
     }
 
+    // Dream image helpers
+    async getDreamImageBase64(): Promise<string | null> {
+        if (!this.db) throw new Error('Database not initialized');
+        const results = await this.db.executeSql('SELECT image_base64 FROM dream_image ORDER BY updated_at DESC LIMIT 1');
+        if (results[0].rows.length > 0) {
+            return results[0].rows.item(0).image_base64 as string;
+        }
+        return null;
+    }
+
+    async setDreamImageBase64(imageBase64: string): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        const existing = await this.db.executeSql('SELECT id FROM dream_image LIMIT 1');
+        if (existing[0].rows.length > 0) {
+            const id = existing[0].rows.item(0).id;
+            await this.db.executeSql('UPDATE dream_image SET image_base64 = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [imageBase64, id]);
+        } else {
+            await this.db.executeSql('INSERT INTO dream_image (image_base64) VALUES (?)', [imageBase64]);
+        }
+    }
+
     private async createTables() {
         if (!this.db) throw new Error('Database not initialized');
         for (const query of TABLES) {

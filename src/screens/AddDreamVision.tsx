@@ -1,0 +1,119 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, Image, ScrollView, SafeAreaView, Alert, Dimensions } from 'react-native';
+import home from "../assets/illustrations/dream.png";
+import { ThemedText } from '../ui/ThemedText';
+import { dbHelper } from '../database';
+import { launchImageLibrary } from 'react-native-image-picker';
+import CustomButton from '../ui/CustomButton';
+
+const { width: screenWidth } = Dimensions.get('window');
+
+function AddDreamVisionScreen() {
+    const [imageBase64, setImageBase64] = useState<string | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                await dbHelper.initializeDatabase();
+                const existing = await dbHelper.getDreamImageBase64();
+                setImageBase64(existing);
+            } catch (e) {
+                console.error(e);
+            }
+        })();
+    }, []);
+
+    const pickImage = useCallback(async () => {
+        try {
+            const res = await launchImageLibrary({
+                mediaType: 'photo',
+                includeBase64: true,
+                selectionLimit: 1,
+                quality: 0.8,
+                fixOrientation: true,
+                maxWidth: 800,
+                maxHeight: 800,
+            });
+
+            if (res.didCancel) return;
+
+            const asset = res.assets && res.assets[0];
+            const base64 = asset?.base64;
+
+            if (!base64) return;
+
+            setLoading(true);
+            await dbHelper.initializeDatabase();
+            await dbHelper.setDreamImageBase64(base64);
+            setImageBase64(base64);
+        } catch (err) {
+            console.error(err);
+            Alert.alert('Error', 'Failed to select image');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    return (
+        <SafeAreaView className="flex-1 bg-[#FBF7EF]">
+            {/* Scrollable content */}
+            <ScrollView 
+                className="flex-1" 
+                contentContainerStyle={{ paddingBottom: 20 }}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Main content */}
+                <View className="pt-12 px-4">
+                    {/* Header text */}
+                    <View className="mb-8 px-2 mr-0">
+                        <ThemedText className="text-black text-3xl leading-10 mb-2 mx-4" style={{ fontFamily: 'YoungSerif-Regular' }}>
+                            Add your dream photo that inspires you.
+                        </ThemedText>
+                    </View>
+
+                    {/* Image Container */}
+                    <View className="items-center mb-8">
+                        {imageBase64 ? (
+                            <View className="bg-white rounded-2xl shadow-lg p-2" style={{ 
+                                width: screenWidth - 48, 
+                                maxWidth: 320,
+                            }}>
+                                <Image
+                                    source={{ uri: `data:image/jpeg;base64,${imageBase64}` }}
+                                    style={{
+                                        width: '100%',
+                                        aspectRatio: 1, 
+                                        borderRadius: 12,
+                                    }}
+                                    resizeMode="contain" 
+                                />
+                            </View>
+                        ) : (
+                            <Image
+                                source={home}
+                                className="w-80 h-52"
+                                resizeMode="contain"
+                            />
+                        )}
+                    </View>
+                </View>
+            </ScrollView>
+            
+            {/* Button fixed at bottom */}
+            <View className="px-4 pb-8 bg-[#FBF7EF]">
+                <CustomButton
+                    title={
+                        imageBase64
+                            ? (loading ? 'Saving...' : 'Change photo')
+                            : (loading ? 'Saving...' : 'Upload first photo')
+                    }
+                    onPress={pickImage}
+                    disabled={loading}
+                />
+            </View>
+        </SafeAreaView>
+    );
+}
+
+export default AddDreamVisionScreen;
