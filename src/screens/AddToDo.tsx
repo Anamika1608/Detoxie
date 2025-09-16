@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { CustomAlert, CustomToast, useAlert, useToast } from '../components/CustomAlert'
 import {
     View,
     TouchableOpacity,
     SafeAreaView,
     ScrollView,
     TextInput,
-    Alert,
     KeyboardAvoidingView,
     Platform,
+    Keyboard,
 } from 'react-native';
 import SQLite from 'react-native-sqlite-storage';
 import { ThemedText } from '../ui/ThemedText';
@@ -16,16 +17,16 @@ import taskIllustration from "../assets/illustrations/tasks.png"
 import { dbHelper } from '../database';
 import type { Task } from '../types';
 
-// Enable promises and debugging
 SQLite.enablePromise(true);
 SQLite.DEBUG(true);
 
 type TaskItemProps = { task: Task; onDelete: (id: number) => void };
+
 const TaskItem = ({ task, onDelete }: TaskItemProps) => (
+
     <View className="flex-row items-center bg-[#efe5d3] rounded-2xl pl-5 pr-2 py-4 shadow-lg shadow-black/10">
-        <TouchableOpacity
+        <View
             className="flex-row items-center flex-1"
-            activeOpacity={0.7}
         >
             <View className="mr-4">
                 <View className={`w-6 h-6 rounded-full border-2 justify-center items-center bg-[#2C2C2C] border-[#2C2C2C]
@@ -38,7 +39,8 @@ const TaskItem = ({ task, onDelete }: TaskItemProps) => (
             <ThemedText className={`text-base flex-1 font-medium text-black`}>
                 {task.text}
             </ThemedText>
-        </TouchableOpacity>
+        </View>
+
         <TouchableOpacity
             className="w-8 h-8 ml-2 rounded-full bg-gray-100 justify-center items-center"
             onPress={() => onDelete(task.id)}
@@ -105,7 +107,10 @@ const TaskPriorityScreen = () => {
     const [newTaskText, setNewTaskText] = useState('');
     const [isAddingTask, setIsAddingTask] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    
+
+    const { alert, showAlert, hideAlert } = useAlert();
+    const { toast, hideToast } = useToast();
+
     const initializeDatabase = async () => {
         await dbHelper.initializeDatabase();
         await loadTasks();
@@ -132,7 +137,7 @@ const TaskPriorityScreen = () => {
             return saved;
         } catch (error) {
             console.error('Error saving task:', error);
-            Alert.alert('Error', 'Failed to save task');
+            showAlert('Error', 'Failed to save task', { type: 'error' });
             return null;
         }
     };
@@ -143,7 +148,7 @@ const TaskPriorityScreen = () => {
             return true;
         } catch (error) {
             console.error('Error deleting task:', error);
-            Alert.alert('Error', 'Failed to delete task');
+            showAlert('Error', 'Failed to delete task', { type: 'error' });
             return false;
         }
     };
@@ -152,14 +157,16 @@ const TaskPriorityScreen = () => {
         if (isAddingTask && newTaskText.trim()) {
             const savedTask = await saveTaskToDatabase(newTaskText.trim());
             if (savedTask) {
+                Keyboard.dismiss()
                 setTasks([savedTask, ...tasks]);
                 setNewTaskText('');
                 setIsAddingTask(false);
             }
         } else if (isAddingTask && !newTaskText.trim()) {
-            Alert.alert('Error', 'Please enter a task description');
-        } else {
-            Alert.alert('Info', 'All tasks are already saved automatically!');
+            showAlert('Oops!', 'Please enter a task description', {
+                type: 'error',
+                confirmText: 'Got it'
+            });
         }
     };
 
@@ -266,6 +273,25 @@ const TaskPriorityScreen = () => {
                         </View>
                     )} */}
                 </View>
+
+                <CustomAlert
+                    visible={alert.visible}
+                    title={alert.title}
+                    message={alert.message}
+                    type={alert.type}
+                    onConfirm={alert.onConfirm || hideAlert}
+                    onCancel={alert.onCancel}
+                    confirmText={alert.confirmText}
+                    cancelText={alert.cancelText}
+                />
+
+                <CustomToast
+                    visible={toast.visible}
+                    message={toast.message}
+                    type={toast.type}
+                    onHide={hideToast}
+                />
+                
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
