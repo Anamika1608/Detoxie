@@ -3,18 +3,26 @@ package com.detoxie;
 import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.provider.Settings;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.Arguments;
 
 public class ReelsMonitorService extends AccessibilityService {
@@ -201,28 +209,8 @@ public class ReelsMonitorService extends AccessibilityService {
             removeOverlay();
         }
 
-        // Inflate the overlay layout
-        overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_reels_exit, null);
-
-        // Update time spent text
-        TextView timeText = overlayView.findViewById(R.id.time_spent_text);
-        timeText.setText("You've spent " + (timeSpent / 1000) + " seconds on Reels. Take a break?");
-
-        // Set up close button
-        Button closeButton = overlayView.findViewById(R.id.close_button);
-        closeButton.setOnClickListener(v -> {
-            removeOverlay();
-            hasExceededThreshold = false;
-            
-            // Check if still in reels and restart tracking
-            AccessibilityNodeInfo currentRoot = getRootInActiveWindow();
-            if (currentRoot != null && isReelsSectionActive(currentRoot)) {
-                isInReels = true;
-                reelsStartTime = System.currentTimeMillis();
-                Log.d(TAG, "Restarted tracking after overlay dismissed");
-                sendEventToReactNative("ReelsEvent", createEventMap("Resumed Reels", getTotalTimeSpent()));
-            }
-        });
+        // Create custom overlay based on React Native configuration
+        overlayView = createCustomOverlay(timeSpent);
 
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -241,6 +229,169 @@ public class ReelsMonitorService extends AccessibilityService {
         } catch (Exception e) {
             Log.e(TAG, "Failed to display overlay", e);
         }
+    }
+
+    private View createCustomOverlay(long timeSpent) {
+        // Get configuration from React Native
+        ReelsMonitorModule module = ReelsMonitorModule.getInstance();
+        ReadableMap config = module != null ? module.getOverlayConfig() : null;
+        
+        // Create main container
+        LinearLayout mainContainer = new LinearLayout(this);
+        mainContainer.setOrientation(LinearLayout.VERTICAL);
+        mainContainer.setGravity(Gravity.CENTER);
+        mainContainer.setPadding(60, 100, 60, 100);
+        
+        // Apply background configuration
+        GradientDrawable background = new GradientDrawable();
+        if (config != null && config.hasKey("backgroundColor")) {
+            try {
+                String bgColor = config.getString("backgroundColor");
+                background.setColor(Color.parseColor(bgColor));
+            } catch (Exception e) {
+                background.setColor(Color.parseColor("#5865F2")); // Default blue
+            }
+        } else {
+            background.setColor(Color.parseColor("#5865F2")); // Default blue
+        }
+        background.setCornerRadius(24);
+        mainContainer.setBackground(background);
+
+        // Title text
+        TextView titleText = new TextView(this);
+        String titleMessage = "Make time for what\ntruly matters.";
+        if (config != null && config.hasKey("title")) {
+            titleMessage = config.getString("title");
+        }
+        titleText.setText(titleMessage);
+        titleText.setTextColor(Color.WHITE);
+        titleText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
+        titleText.setGravity(Gravity.CENTER);
+        titleText.setTypeface(null, android.graphics.Typeface.BOLD);
+        
+        LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, 
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        titleParams.bottomMargin = 40;
+        titleText.setLayoutParams(titleParams);
+        mainContainer.addView(titleText);
+
+        // Cat illustration container (simplified)
+        LinearLayout catContainer = new LinearLayout(this);
+        catContainer.setOrientation(LinearLayout.VERTICAL);
+        catContainer.setGravity(Gravity.CENTER);
+        
+        // Speech bubble
+        TextView speechBubble = new TextView(this);
+        speechBubble.setText("YOUR BREAK PLEASE!");
+        speechBubble.setTextColor(Color.BLACK);
+        speechBubble.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        speechBubble.setPadding(20, 10, 20, 10);
+        GradientDrawable bubbleBackground = new GradientDrawable();
+        bubbleBackground.setColor(Color.WHITE);
+        bubbleBackground.setCornerRadius(16);
+        speechBubble.setBackground(bubbleBackground);
+        
+        LinearLayout.LayoutParams bubbleParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, 
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        bubbleParams.bottomMargin = 20;
+        speechBubble.setLayoutParams(bubbleParams);
+        catContainer.addView(speechBubble);
+
+        // Simple cat representation (you can replace with actual image)
+        TextView catEmoji = new TextView(this);
+        catEmoji.setText("🐱");
+        catEmoji.setTextSize(TypedValue.COMPLEX_UNIT_SP, 48);
+        catEmoji.setGravity(Gravity.CENTER);
+        catContainer.addView(catEmoji);
+        
+        LinearLayout.LayoutParams catParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, 
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        catParams.bottomMargin = 40;
+        catContainer.setLayoutParams(catParams);
+        mainContainer.addView(catContainer);
+
+        // Time circle
+        LinearLayout timeContainer = new LinearLayout(this);
+        timeContainer.setOrientation(LinearLayout.VERTICAL);
+        timeContainer.setGravity(Gravity.CENTER);
+        
+        GradientDrawable circleBackground = new GradientDrawable();
+        circleBackground.setColor(Color.parseColor("#FFD700")); // Gold color
+        circleBackground.setShape(GradientDrawable.OVAL);
+        timeContainer.setBackground(circleBackground);
+        timeContainer.setPadding(40, 40, 40, 40);
+        
+        // Calculate minutes
+        int minutes = (int) (timeSpent / (60 * 1000));
+        
+        TextView timeNumber = new TextView(this);
+        timeNumber.setText(String.valueOf(minutes));
+        timeNumber.setTextColor(Color.BLACK);
+        timeNumber.setTextSize(TypedValue.COMPLEX_UNIT_SP, 32);
+        timeNumber.setTypeface(null, android.graphics.Typeface.BOLD);
+        timeNumber.setGravity(Gravity.CENTER);
+        timeContainer.addView(timeNumber);
+        
+        TextView timeLabel = new TextView(this);
+        timeLabel.setText("mins left");
+        timeLabel.setTextColor(Color.BLACK);
+        timeLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        timeLabel.setGravity(Gravity.CENTER);
+        timeContainer.addView(timeLabel);
+        
+        // Make time container circular
+        LinearLayout.LayoutParams timeParams = new LinearLayout.LayoutParams(120, 120);
+        timeParams.bottomMargin = 60;
+        timeContainer.setLayoutParams(timeParams);
+        mainContainer.addView(timeContainer);
+
+        // Close button
+        Button closeButton = new Button(this);
+        String buttonText = "Close";
+        if (config != null && config.hasKey("buttonText")) {
+            buttonText = config.getString("buttonText");
+        }
+        closeButton.setText(buttonText);
+        closeButton.setTextColor(Color.WHITE);
+        closeButton.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        closeButton.setTypeface(null, android.graphics.Typeface.BOLD);
+        
+        GradientDrawable buttonBackground = new GradientDrawable();
+        buttonBackground.setColor(Color.BLACK);
+        buttonBackground.setCornerRadius(24);
+        closeButton.setBackground(buttonBackground);
+        closeButton.setPadding(0, 20, 0, 20);
+        
+        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        buttonParams.setMargins(40, 0, 40, 0);
+        closeButton.setLayoutParams(buttonParams);
+        
+        closeButton.setOnClickListener(v -> {
+            removeOverlay();
+            hasExceededThreshold = false;
+            
+            // Check if still in reels and restart tracking
+            AccessibilityNodeInfo currentRoot = getRootInActiveWindow();
+            if (currentRoot != null && isReelsSectionActive(currentRoot)) {
+                isInReels = true;
+                reelsStartTime = System.currentTimeMillis();
+                Log.d(TAG, "Restarted tracking after overlay dismissed");
+                sendEventToReactNative("ReelsEvent", createEventMap("Resumed Reels", getTotalTimeSpent()));
+            }
+        });
+        
+        mainContainer.addView(closeButton);
+        
+        return mainContainer;
     }
 
     private void removeOverlay() {

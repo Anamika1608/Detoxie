@@ -13,6 +13,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.module.annotations.ReactModule;
@@ -22,6 +23,7 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
     public static final String NAME = "ReelsMonitorModule";
     private static final String TAG = "ReelsMonitorModule";
     private static ReelsMonitorModule instance;
+    private ReadableMap overlayConfig;
 
     public ReelsMonitorModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -35,6 +37,22 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
 
     public static ReelsMonitorModule getInstance() {
         return instance;
+    }
+
+    @ReactMethod
+    public void configureOverlay(ReadableMap config, Promise promise) {
+        try {
+            this.overlayConfig = config;
+            promise.resolve("Overlay configured successfully");
+            Log.d(TAG, "Overlay configuration updated");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to configure overlay", e);
+            promise.reject("ERROR", "Failed to configure overlay: " + e.getMessage());
+        }
+    }
+
+    public ReadableMap getOverlayConfig() {
+        return overlayConfig;
     }
 
     public void sendEventToReactNative(String eventName, WritableMap params) {

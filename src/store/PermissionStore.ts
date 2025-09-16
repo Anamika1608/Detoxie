@@ -12,6 +12,13 @@ export const usePermissionStore = create((set, get) => ({
   showPermissionModal: false,
   permissionModalType: null, // 'accessibility' or 'overlay'
   isCheckingPermissions: false,
+  overlayConfig: {
+    backgroundColor: '#5865F2',
+    title: 'Make time for what\ntruly matters.',
+    buttonText: 'Close',
+    showCat: true,
+    showTimeCircle: true,
+  },
 
   // Actions
   setHasAccessibilityPermission: (hasPermission) =>
@@ -29,8 +36,26 @@ export const usePermissionStore = create((set, get) => ({
   setShowPermissionModal: (show, type = null) =>
     set({ showPermissionModal: show, permissionModalType: type }),
 
+  configureOverlay: async (config) => {
+    try {
+      await ReelsMonitorModule.configureOverlay(config);
+      set({ overlayConfig: { ...get().overlayConfig, ...config } });
+      console.log('Overlay configured successfully');
+    } catch (error) {
+      console.error('Error configuring overlay:', error);
+    }
+  },
+
+  updateOverlayConfig: (newConfig) => {
+    const updatedConfig = { ...get().overlayConfig, ...newConfig };
+    set({ overlayConfig: updatedConfig });
+    get().configureOverlay(updatedConfig);
+  },
+
   startMonitoring: async () => {
     try {
+      await get().configureOverlay(get().overlayConfig);
+      
       await ReelsMonitorModule.startMonitoring();
       set({ 
         isMonitoring: true,
@@ -125,5 +150,44 @@ export const usePermissionStore = create((set, get) => ({
 
   initialize: () => {
     get().checkPermissions();
-  }
+  },
+
+  // Preset overlay themes
+  applyOverlayTheme: (themeName) => {
+    const themes = {
+      purple: {
+        backgroundColor: '#8B5CF6',
+        title: 'Time for a mindful\nbreak! 💜',
+        buttonText: 'Got it!',
+      },
+      green: {
+        backgroundColor: '#10B981',
+        title: 'Nature is calling!\nTake a walk 🌱',
+        buttonText: 'Let\'s go',
+      },
+      orange: {
+        backgroundColor: '#F59E0B',
+        title: 'Sunshine awaits\nyou outside! ☀️',
+        buttonText: 'Step outside',
+      },
+      red: {
+        backgroundColor: '#EF4444',
+        title: 'You\'ve been scrolling\nfor too long! 🔥',
+        buttonText: 'Break free',
+      },
+      blue: {
+        backgroundColor: '#3B82F6',
+        title: 'Your mind needs\na breather 🌊',
+        buttonText: 'Refresh',
+      },
+      minimal: {
+        backgroundColor: '#374151',
+        title: 'Time to disconnect\nand reconnect',
+        buttonText: 'Close',
+      }
+    };
+
+    const theme = themes[themeName] || themes.purple;
+    get().updateOverlayConfig(theme);
+  },
 }));
