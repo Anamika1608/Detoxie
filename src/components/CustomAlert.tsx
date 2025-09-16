@@ -3,14 +3,10 @@ import {
     View,
     TouchableOpacity,
     Animated,
-    Dimensions,
     Modal,
 } from 'react-native';
 import { ThemedText } from '../ui/ThemedText';
 
-const { width } = Dimensions.get('window');
-
-// Custom Alert Component
 interface CustomAlertProps {
     visible: boolean;
     title: string;
@@ -155,7 +151,7 @@ export const CustomToast: React.FC<ToastProps> = ({
     visible,
     message,
     type = 'info',
-    duration = 3000,
+    duration = 1500, // Reduced from 3000 to 1500ms (1.5 seconds)
     onHide
 }) => {
     const [translateY] = useState(new Animated.Value(-100));
@@ -201,6 +197,18 @@ export const CustomToast: React.FC<ToastProps> = ({
         });
     };
 
+    const hideToastImmediately = () => {
+        translateY.stopAnimation();
+        opacity.stopAnimation();
+        
+        Animated.timing(translateY, {
+            toValue: -100,
+            duration: 200, 
+            useNativeDriver: true,
+        }).start(() => {
+            onHide();
+        });
+    };
 
     const getBackgroundColor = () => {
         switch (type) {
@@ -209,7 +217,7 @@ export const CustomToast: React.FC<ToastProps> = ({
             case 'success':
                 return '#51cf66';
             default:
-                return '#4C4B7E';
+                return '#aacff2';
         }
     };
 
@@ -225,7 +233,7 @@ export const CustomToast: React.FC<ToastProps> = ({
         >
             <TouchableOpacity
                 activeOpacity={0.9}
-                onPress={hideToast}
+                onPress={hideToastImmediately} // Changed to use immediate hide
                 className="flex-row items-center rounded-2xl p-4 mx-4"
                 style={{
                     backgroundColor: getBackgroundColor(),
@@ -236,10 +244,10 @@ export const CustomToast: React.FC<ToastProps> = ({
                     elevation: 8,
                 }}
             >
-                <ThemedText className="text-white font-medium flex-1 text-base">
+                <ThemedText className="text-black font-medium flex-1 text-base">
                     {message}
                 </ThemedText>
-                <ThemedText className="text-white/70 text-sm ml-2">
+                <ThemedText className="text-black text-sm ml-2">
                     ×
                 </ThemedText>
             </TouchableOpacity>

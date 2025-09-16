@@ -44,6 +44,7 @@ const TaskItem = ({ task, onDelete }: TaskItemProps) => (
         <TouchableOpacity
             className="w-8 h-8 ml-2 rounded-full bg-gray-100 justify-center items-center"
             onPress={() => onDelete(task.id)}
+            activeOpacity={0.7}
         >
             <ThemedText className="text-lg text-gray-500 font-light">−</ThemedText>
         </TouchableOpacity>
@@ -74,6 +75,7 @@ const AddTaskInput = ({ newTaskText, setNewTaskText, cancelAddTask, onAddTask }:
         <TouchableOpacity
             className="w-8 h-8 rounded-full bg-gray-100 justify-center items-center ml-2"
             onPress={cancelAddTask}
+            activeOpacity={0.7}
         >
             <ThemedText className="text-lg text-gray-500 font-light">×</ThemedText>
         </TouchableOpacity>
@@ -92,6 +94,7 @@ const EmptyState = ({ onAddTask }: EmptyStateProps) => (
             <TouchableOpacity
                 className="bg-[#fddab1] px-6 py-3 rounded-xl mt-6"
                 onPress={onAddTask}
+                activeOpacity={0.7}
             >
                 <ThemedText className="text-black font-semibold text-base">
                     + Add your first task
@@ -109,7 +112,7 @@ const TaskPriorityScreen = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     const { alert, showAlert, hideAlert } = useAlert();
-    const { toast, hideToast } = useToast();
+    const { toast, hideToast, showToast } = useToast();
 
     const initializeDatabase = async () => {
         await dbHelper.initializeDatabase();
@@ -163,10 +166,7 @@ const TaskPriorityScreen = () => {
                 setIsAddingTask(false);
             }
         } else if (isAddingTask && !newTaskText.trim()) {
-            showAlert('Oops!', 'Please enter a task description', {
-                type: 'error',
-                confirmText: 'Got it'
-            });
+            showToast('Please enter description!', 'info');
         }
     };
 
@@ -181,7 +181,10 @@ const TaskPriorityScreen = () => {
         if (isAddingTask) {
             handleAddTodo();
         } else {
-            setIsAddingTask(true);
+            Keyboard.dismiss();
+            setTimeout(() => {
+                setIsAddingTask(true);
+            }, 100);
         }
     };
 
@@ -220,7 +223,11 @@ const TaskPriorityScreen = () => {
                             <EmptyState onAddTask={() => setIsAddingTask(true)} />
                         </>
                     ) : (
-                        <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+                        <ScrollView
+                            className="flex-1 px-5"
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                        >
                             {/* Header */}
                             <View className="mt-10 mb-10">
                                 <ThemedText className="text-base text-gray-600 mb-2 font-normal">
@@ -233,8 +240,11 @@ const TaskPriorityScreen = () => {
 
                             {/* Add Task Button */}
                             <View className="mb-8">
-                                <TouchableOpacity className="bg-[#fddab1] px-4 py-2 rounded-xl self-start"
-                                    onPress={handleAddButtonPress}>
+                                <TouchableOpacity
+                                    className="bg-[#fddab1] px-4 py-2 rounded-xl self-start"
+                                    onPress={handleAddButtonPress}
+                                    activeOpacity={0.7}
+                                >
                                     <ThemedText className="text-black font-semibold text-base">
                                         {isAddingTask ? '✓ Add' : '+ Add new task'}
                                     </ThemedText>
@@ -291,7 +301,7 @@ const TaskPriorityScreen = () => {
                     type={toast.type}
                     onHide={hideToast}
                 />
-                
+
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
