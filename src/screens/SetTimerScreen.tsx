@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, Dimensions } from 'react-native'
+import { View, Text } from 'react-native'
 import { ThemedText } from '../ui/ThemedText'
 import CustomButton from '../ui/CustomButton'
 import Slider from '@react-native-community/slider'
@@ -15,18 +15,24 @@ function SetTimerScreen() {
             await dbHelper.initializeDatabase()
             const saved = await dbHelper.getTimerMinutes()
             if (typeof saved === 'number') {
-                setTimerValue(saved)
+                const roundedValue = Math.round(Math.max(saved, 5) / 5) * 5
+                setTimerValue(roundedValue)
             }
         }
         init()
     }, [])
+
+    const handleSliderChange = (value) => {
+        const roundedValue = Math.round(value / 5) * 5
+        setTimerValue(roundedValue)
+    }
 
     const handleSetTimer = async () => {
         setSaveStatus('saving')
         try {
             await dbHelper.setTimerMinutes(timerValue)
             setSaveStatus('saved')
-            
+
             setTimeout(() => {
                 setSaveStatus('idle')
             }, 500)
@@ -106,7 +112,7 @@ function SetTimerScreen() {
                 {saveStatus === 'saved' && (
                     <View className='mt-4 bg-green-100 px-4 py-2 rounded-2xl'>
                         <ThemedText className='text-green-700 font-medium'>
-                             Timer saved successfully!
+                            Timer saved successfully!
                         </ThemedText>
                     </View>
                 )}
@@ -121,28 +127,19 @@ function SetTimerScreen() {
                         height: 50,
                         marginVertical: 8,
                     }}
-                    minimumValue={0}
+                    minimumValue={5}
                     maximumValue={45}
                     value={timerValue}
-                    onValueChange={setTimerValue}
+                    onValueChange={handleSliderChange}
                     step={5}
                     minimumTrackTintColor="#4C4B7E"
                     maximumTrackTintColor="#a6a9ad"
                     thumbTintColor="#4C4B7E"
                 />
 
-                {/* Slider Labels - Properly aligned */}
-                <View
-                    className='flex-row justify-between'
-                    style={{
-                        paddingHorizontal: 12,
-                        marginTop: 4,
-                    }}
-                >
-                    <ThemedText className='text-gray-600 text-sm'>0</ThemedText>
-                    <ThemedText className='text-gray-600 text-sm'>15</ThemedText>
-                    <ThemedText className='text-gray-600 text-sm'>30</ThemedText>
-                    <ThemedText className='text-gray-600 text-sm'>45</ThemedText>
+                <View className='flex-row justify-between -mt-3' style={{ paddingHorizontal: 12 }}>
+                    <ThemedText className='text-gray-600 text-sm'>5 </ThemedText>
+                    <ThemedText className='text-gray-600 text-sm'>45 </ThemedText>
                 </View>
             </View>
 
