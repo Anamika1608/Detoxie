@@ -217,7 +217,7 @@ export const CustomToast: React.FC<ToastProps> = ({
             case 'success':
                 return '#51cf66';
             default:
-                return '#aacff2';
+                return '#d4e8fa';
         }
     };
 

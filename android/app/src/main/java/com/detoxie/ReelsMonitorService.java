@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.provider.Settings;
 import android.util.Log;
 import android.util.TypedValue;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,6 +20,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.facebook.react.bridge.WritableMap;
@@ -28,15 +30,19 @@ import com.facebook.react.bridge.Arguments;
 public class ReelsMonitorService extends AccessibilityService {
     private static final String TAG = "ReelsMonitorService";
     private static final String INSTAGRAM_PACKAGE = "com.instagram.android";
-    private static final long TIME_THRESHOLD = 2 * 60 * 1000; // 2 minutes
     private static final String PREFS_NAME = "ReelsMonitorPrefs";
     private static final String TOTAL_TIME_KEY = "total_time_spent";
     private static final String SESSION_COUNT_KEY = "session_count";
     private static final String LAST_SESSION_DATE_KEY = "last_session_date";
+    // Daily gating keys
+    private static final String DAILY_DATE_KEY = "daily_date";
+    private static final String DAILY_ACCUMULATED_MS_KEY = "daily_accumulated_ms";
+    private static final String DAILY_HALF_SHOWN_KEY = "daily_half_shown";
+    private static final String DAILY_LIMIT_REACHED_KEY = "daily_limit_reached";
     
     private long reelsStartTime = 0;
     private boolean isInReels = false;
-    private boolean hasExceededThreshold = false;
+    private boolean hasExceededThreshold = false; // legacy flag, no longer used for gating
     private boolean isOverlayShowing = false;
     private String lastKnownPackage = "";
     private WindowManager windowManager;
@@ -48,6 +54,7 @@ public class ReelsMonitorService extends AccessibilityService {
         super.onServiceConnected();
         Log.d(TAG, "Service connected");
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        ensureDailyState();
         
         sendEventToReactNative("ReelsEvent", createEventMap("Service Connected", 0));
     }
@@ -67,7 +74,6 @@ public class ReelsMonitorService extends AccessibilityService {
                 
                 Log.d(TAG, "User genuinely switched to another app: " + packageName);
                 removeOverlay();
-                resetStates();
                 sendEventToReactNative("ReelsEvent", createEventMap("Left Instagram", getTotalTimeSpent()));
             }
             return; 
@@ -80,7 +86,7 @@ public class ReelsMonitorService extends AccessibilityService {
         // Check for app exit when overlay is NOT showing
         if (!INSTAGRAM_PACKAGE.equals(packageName)) {
             Log.d(TAG, "User has exited Instagram app to: " + packageName);
-            resetStates();
+            onExitReelsIfNeeded();
             sendEventToReactNative("ReelsEvent", createEventMap("Left Instagram", getTotalTimeSpent()));
             return;
         }
@@ -89,40 +95,49 @@ public class ReelsMonitorService extends AccessibilityService {
         boolean reelsSectionActive = rootNode != null && isReelsSectionActive(rootNode);
 
         if (reelsSectionActive) {
+            ensureDailyState();
+            long now = System.currentTimeMillis();
+
             if (!isInReels) {
-                if (hasExceededThreshold) {
-                    showOverlay(TIME_THRESHOLD);
-                    return; 
-                } else {
-                    isInReels = true;
-                    reelsStartTime = System.currentTimeMillis();
-                    Log.d(TAG, "Started tracking Reels time");
-                    sendEventToReactNative("ReelsEvent", createEventMap("Entered Reels", getTotalTimeSpent()));
-                }
-            } else {
-                // Send periodic updates while in reels
-                long currentSessionTime = System.currentTimeMillis() - reelsStartTime;
-                sendEventToReactNative("ReelsTimeUpdate", createTimeUpdateMap(currentSessionTime));
-                
-                if (currentSessionTime >= TIME_THRESHOLD && !hasExceededThreshold) {
-                    hasExceededThreshold = true;
-                    Log.d(TAG, "User has spent 2 minutes scrolling Reels!");
-                    
-                    // Update total time in preferences
-                    updateTotalTimeSpent(currentSessionTime);
-                    
-                    showOverlay(currentSessionTime);
-                    isInReels = false;
-                }
+                isInReels = true;
+                reelsStartTime = now;
+                Log.d(TAG, "Entered Reels");
+                sendEventToReactNative("ReelsEvent", createEventMap("Entered Reels", getTotalTimeSpent()));
+            }
+
+            // Send periodic updates while in reels
+            long currentSessionTime = now - reelsStartTime;
+            sendEventToReactNative("ReelsTimeUpdate", createTimeUpdateMap(currentSessionTime));
+
+            long accumulatedToday = prefs.getLong(DAILY_ACCUMULATED_MS_KEY, 0);
+            long totalElapsedToday = accumulatedToday + currentSessionTime;
+
+            long fullThresholdMs = getConfiguredLimitMs();
+            long halfThresholdMs = fullThresholdMs / 2;
+
+            boolean halfShown = prefs.getBoolean(DAILY_HALF_SHOWN_KEY, false);
+            boolean limitReached = prefs.getBoolean(DAILY_LIMIT_REACHED_KEY, false);
+
+            if (limitReached) {
+                showOverlay(totalElapsedToday, /*allowClose*/ false);
+                return;
+            }
+
+            if (!halfShown && totalElapsedToday >= halfThresholdMs) {
+                showOverlay(totalElapsedToday, /*allowClose*/ true);
+                prefs.edit().putBoolean(DAILY_HALF_SHOWN_KEY, true).apply();
+                return;
+            }
+
+            if (totalElapsedToday >= fullThresholdMs) {
+                prefs.edit().putBoolean(DAILY_LIMIT_REACHED_KEY, true).apply();
+                showOverlay(totalElapsedToday, /*allowClose*/ false);
+                return;
             }
         } else {
             if (isInReels) {
-                isInReels = false;
-                long sessionTime = System.currentTimeMillis() - reelsStartTime;
-                updateTotalTimeSpent(sessionTime);
-                Log.d(TAG, "Left Reels section. Time spent: " + (sessionTime / 1000) + " seconds");
+                onExitReelsIfNeeded();
                 sendEventToReactNative("ReelsEvent", createEventMap("Left Reels", getTotalTimeSpent()));
-                reelsStartTime = 0;
             }
         }
     }
@@ -179,18 +194,47 @@ public class ReelsMonitorService extends AccessibilityService {
         }
     }
     
-    private void resetStates() {
+    private void onExitReelsIfNeeded() {
         if (isInReels) {
             long sessionTime = System.currentTimeMillis() - reelsStartTime;
             updateTotalTimeSpent(sessionTime);
+            // Accumulate into today's counter (no reset)
+            long accumulatedToday = prefs.getLong(DAILY_ACCUMULATED_MS_KEY, 0);
+            prefs.edit().putLong(DAILY_ACCUMULATED_MS_KEY, accumulatedToday + sessionTime).apply();
             isInReels = false;
             reelsStartTime = 0;
         }
         removeOverlay();
-        hasExceededThreshold = false;
     }
 
-    private void showOverlay(long timeSpent) {
+    private void ensureDailyState() {
+        String today = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(new java.util.Date());
+        String stored = prefs.getString(DAILY_DATE_KEY, null);
+        if (stored == null || !stored.equals(today)) {
+            prefs.edit()
+                .putString(DAILY_DATE_KEY, today)
+                .putLong(DAILY_ACCUMULATED_MS_KEY, 0)
+                .putBoolean(DAILY_HALF_SHOWN_KEY, false)
+                .putBoolean(DAILY_LIMIT_REACHED_KEY, false)
+                .apply();
+            Log.d(TAG, "Daily state reset for date: " + today);
+        }
+    }
+
+    private long getConfiguredLimitMs() {
+        long defaultMinutes = 5; // default 5 minutes
+        ReelsMonitorModule module = ReelsMonitorModule.getInstance();
+        ReadableMap config = module != null ? module.getOverlayConfig() : null;
+        if (config != null && config.hasKey("timerMinutes")) {
+            try {
+                int min = config.getInt("timerMinutes");
+                if (min > 0) return min * 60L * 1000L;
+            } catch (Exception ignored) {}
+        }
+        return defaultMinutes * 60L * 1000L;
+    }
+
+    private void showOverlay(long totalElapsedMsToday, boolean allowClose) {
         if (!Settings.canDrawOverlays(this)) {
             Log.d(TAG, "Overlay permission not granted");
             return;
@@ -210,16 +254,20 @@ public class ReelsMonitorService extends AccessibilityService {
         }
 
         // Create custom overlay based on React Native configuration
-        overlayView = createCustomOverlay(timeSpent);
+        overlayView = createCustomOverlay(totalElapsedMsToday, allowClose);
+
+        int screenHeight = getResources().getDisplayMetrics().heightPixels;
+        int desiredHeight = (int) (screenHeight * 0.85f); // leave bottom space for navigation
 
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            desiredHeight,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             android.graphics.PixelFormat.TRANSLUCENT
         );
-        params.gravity = android.view.Gravity.CENTER;
+        params.gravity = android.view.Gravity.TOP;
+        params.y = dpToPx(16);
 
         try {
             windowManager.addView(overlayView, params);
@@ -231,16 +279,31 @@ public class ReelsMonitorService extends AccessibilityService {
         }
     }
 
-    private View createCustomOverlay(long timeSpent) {
+    private View createCustomOverlay(long totalElapsedMsToday, boolean allowClose) {
+        long limitMs = getConfiguredLimitMs();
+        long remainingMs = Math.max(0, limitMs - totalElapsedMsToday);
         // Get configuration from React Native
         ReelsMonitorModule module = ReelsMonitorModule.getInstance();
         ReadableMap config = module != null ? module.getOverlayConfig() : null;
+        com.facebook.react.bridge.ReadableArray todosArray = null;
+        String visionBase64 = null;
+        if (config != null) {
+            if (config.hasKey("todos")) {
+                try { todosArray = config.getArray("todos"); } catch (Exception ignored) {}
+            }
+            if (config.hasKey("visionBase64")) {
+                try { visionBase64 = config.getString("visionBase64"); } catch (Exception ignored) {}
+            }
+        }
         
-        // Create main container
+        // Create scrollable container to ensure all content remains visible
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.setFillViewport(true);
+
         LinearLayout mainContainer = new LinearLayout(this);
         mainContainer.setOrientation(LinearLayout.VERTICAL);
         mainContainer.setGravity(Gravity.CENTER);
-        mainContainer.setPadding(60, 100, 60, 100);
+        mainContainer.setPadding(dpToPx(24), dpToPx(32), dpToPx(24), dpToPx(32));
         
         // Apply background configuration
         GradientDrawable background = new GradientDrawable();
@@ -254,7 +317,7 @@ public class ReelsMonitorService extends AccessibilityService {
         } else {
             background.setColor(Color.parseColor("#5865F2")); // Default blue
         }
-        background.setCornerRadius(24);
+        background.setCornerRadius(dpToPx(16));
         mainContainer.setBackground(background);
 
         // Title text
@@ -273,125 +336,119 @@ public class ReelsMonitorService extends AccessibilityService {
             ViewGroup.LayoutParams.WRAP_CONTENT, 
             ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        titleParams.bottomMargin = 40;
+        titleParams.bottomMargin = dpToPx(24);
         titleText.setLayoutParams(titleParams);
         mainContainer.addView(titleText);
 
-        // Cat illustration container (simplified)
-        LinearLayout catContainer = new LinearLayout(this);
-        catContainer.setOrientation(LinearLayout.VERTICAL);
-        catContainer.setGravity(Gravity.CENTER);
-        
-        // Speech bubble
-        TextView speechBubble = new TextView(this);
-        speechBubble.setText("YOUR BREAK PLEASE!");
-        speechBubble.setTextColor(Color.BLACK);
-        speechBubble.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-        speechBubble.setPadding(20, 10, 20, 10);
-        GradientDrawable bubbleBackground = new GradientDrawable();
-        bubbleBackground.setColor(Color.WHITE);
-        bubbleBackground.setCornerRadius(16);
-        speechBubble.setBackground(bubbleBackground);
-        
-        LinearLayout.LayoutParams bubbleParams = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT, 
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        );
-        bubbleParams.bottomMargin = 20;
-        speechBubble.setLayoutParams(bubbleParams);
-        catContainer.addView(speechBubble);
-
-        // Simple cat representation (you can replace with actual image)
-        TextView catEmoji = new TextView(this);
-        catEmoji.setText("🐱");
-        catEmoji.setTextSize(TypedValue.COMPLEX_UNIT_SP, 48);
-        catEmoji.setGravity(Gravity.CENTER);
-        catContainer.addView(catEmoji);
-        
-        LinearLayout.LayoutParams catParams = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT, 
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        );
-        catParams.bottomMargin = 40;
-        catContainer.setLayoutParams(catParams);
-        mainContainer.addView(catContainer);
-
-        // Time circle
-        LinearLayout timeContainer = new LinearLayout(this);
-        timeContainer.setOrientation(LinearLayout.VERTICAL);
-        timeContainer.setGravity(Gravity.CENTER);
-        
-        GradientDrawable circleBackground = new GradientDrawable();
-        circleBackground.setColor(Color.parseColor("#FFD700")); // Gold color
-        circleBackground.setShape(GradientDrawable.OVAL);
-        timeContainer.setBackground(circleBackground);
-        timeContainer.setPadding(40, 40, 40, 40);
-        
-        // Calculate minutes
-        int minutes = (int) (timeSpent / (60 * 1000));
-        
-        TextView timeNumber = new TextView(this);
-        timeNumber.setText(String.valueOf(minutes));
-        timeNumber.setTextColor(Color.BLACK);
-        timeNumber.setTextSize(TypedValue.COMPLEX_UNIT_SP, 32);
-        timeNumber.setTypeface(null, android.graphics.Typeface.BOLD);
-        timeNumber.setGravity(Gravity.CENTER);
-        timeContainer.addView(timeNumber);
-        
-        TextView timeLabel = new TextView(this);
-        timeLabel.setText("mins left");
-        timeLabel.setTextColor(Color.BLACK);
-        timeLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-        timeLabel.setGravity(Gravity.CENTER);
-        timeContainer.addView(timeLabel);
-        
-        // Make time container circular
-        LinearLayout.LayoutParams timeParams = new LinearLayout.LayoutParams(120, 120);
-        timeParams.bottomMargin = 60;
-        timeContainer.setLayoutParams(timeParams);
-        mainContainer.addView(timeContainer);
-
-        // Close button
-        Button closeButton = new Button(this);
-        String buttonText = "Close";
-        if (config != null && config.hasKey("buttonText")) {
-            buttonText = config.getString("buttonText");
+        // Optional vision image
+        if (visionBase64 != null && !visionBase64.isEmpty()) {
+            try {
+                byte[] decoded = android.util.Base64.decode(visionBase64, android.util.Base64.DEFAULT);
+                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+                if (bitmap != null) {
+                    ImageView imageView = new ImageView(this);
+                    imageView.setImageBitmap(bitmap);
+                    imageView.setAdjustViewBounds(true);
+                    imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                    LinearLayout.LayoutParams imgParams = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    );
+                    imgParams.bottomMargin = dpToPx(24);
+                    imageView.setLayoutParams(imgParams);
+                    imageView.setMaxHeight(dpToPx(380));
+                    mainContainer.addView(imageView);
+                }
+            } catch (Exception ignored) {}
         }
-        closeButton.setText(buttonText);
-        closeButton.setTextColor(Color.WHITE);
-        closeButton.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-        closeButton.setTypeface(null, android.graphics.Typeface.BOLD);
-        
-        GradientDrawable buttonBackground = new GradientDrawable();
-        buttonBackground.setColor(Color.BLACK);
-        buttonBackground.setCornerRadius(24);
-        closeButton.setBackground(buttonBackground);
-        closeButton.setPadding(0, 20, 0, 20);
-        
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, 
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        );
-        buttonParams.setMargins(40, 0, 40, 0);
-        closeButton.setLayoutParams(buttonParams);
-        
-        closeButton.setOnClickListener(v -> {
-            removeOverlay();
-            hasExceededThreshold = false;
-            
-            // Check if still in reels and restart tracking
-            AccessibilityNodeInfo currentRoot = getRootInActiveWindow();
-            if (currentRoot != null && isReelsSectionActive(currentRoot)) {
-                isInReels = true;
-                reelsStartTime = System.currentTimeMillis();
-                Log.d(TAG, "Restarted tracking after overlay dismissed");
-                sendEventToReactNative("ReelsEvent", createEventMap("Resumed Reels", getTotalTimeSpent()));
+
+        // Optional todos list
+        if (todosArray != null && todosArray.size() > 0) {
+            LinearLayout listContainer = new LinearLayout(this);
+            listContainer.setOrientation(LinearLayout.VERTICAL);
+            listContainer.setGravity(Gravity.CENTER_HORIZONTAL);
+            LinearLayout.LayoutParams listParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+            listParams.bottomMargin = dpToPx(20);
+            listContainer.setLayoutParams(listParams);
+
+            TextView listTitle = new TextView(this);
+            listTitle.setText("Your Pending work");
+            listTitle.setTextColor(Color.WHITE);
+            listTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+            listTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+            listTitle.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams lt = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lt.bottomMargin = dpToPx(8);
+            listTitle.setLayoutParams(lt);
+            listContainer.addView(listTitle);
+
+            for (int i = 0; i < todosArray.size(); i++) {
+                try {
+                    String item = todosArray.getString(i);
+                    TextView tv = new TextView(this);
+                    tv.setText("• " + item);
+                    tv.setTextColor(Color.WHITE);
+                    tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+                    tv.setGravity(Gravity.START);
+                    LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    ip.bottomMargin = dpToPx(4);
+                    tv.setLayoutParams(ip);
+                    listContainer.addView(tv);
+                } catch (Exception ignored) {}
             }
-        });
+            mainContainer.addView(listContainer);
+        }
+
+        if (allowClose) {
+            // Close button
+            Button closeButton = new Button(this);
+            String buttonText = "Close";
+            if (config != null && config.hasKey("buttonText")) {
+                buttonText = config.getString("buttonText");
+            }
+            closeButton.setText(buttonText);
+            closeButton.setTextColor(Color.WHITE);
+            closeButton.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+            closeButton.setTypeface(null, android.graphics.Typeface.BOLD);
+            
+            GradientDrawable buttonBackground = new GradientDrawable();
+            buttonBackground.setColor(Color.BLACK);
+            buttonBackground.setCornerRadius(dpToPx(16));
+            closeButton.setBackground(buttonBackground);
+            closeButton.setPadding(0, dpToPx(12), 0, dpToPx(12));
+            
+            LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+            buttonParams.setMargins(dpToPx(24), 0, dpToPx(24), 0);
+            closeButton.setLayoutParams(buttonParams);
+            
+            closeButton.setOnClickListener(v -> {
+                removeOverlay();
+                // continue counting without reset
+                AccessibilityNodeInfo currentRoot = getRootInActiveWindow();
+                if (currentRoot != null && isReelsSectionActive(currentRoot)) {
+                    isInReels = true;
+                    reelsStartTime = System.currentTimeMillis();
+                    Log.d(TAG, "Overlay dismissed, continue tracking");
+                    sendEventToReactNative("ReelsEvent", createEventMap("Overlay Dismissed", getTotalTimeSpent()));
+                }
+            });
+            
+            mainContainer.addView(closeButton);
+        }
         
-        mainContainer.addView(closeButton);
-        
-        return mainContainer;
+        scrollView.addView(mainContainer, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return scrollView;
+    }
+
+    private int dpToPx(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
     }
 
     private void removeOverlay() {

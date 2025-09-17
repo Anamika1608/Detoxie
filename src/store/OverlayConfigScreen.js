@@ -14,37 +14,23 @@ const OverlayConfigScreen = () => {
   const {
     overlayConfig,
     updateOverlayConfig,
-    applyOverlayTheme,
-    configureOverlay,
   } = usePermissionStore();
 
   const [customTitle, setCustomTitle] = useState(overlayConfig.title);
   const [customButtonText, setCustomButtonText] = useState(overlayConfig.buttonText);
   const [customColor, setCustomColor] = useState(overlayConfig.backgroundColor);
-
-  const themes = [
-    { name: 'purple', color: '#8B5CF6', label: 'Purple Zen' },
-    { name: 'green', color: '#10B981', label: 'Nature Walk' },
-    { name: 'orange', color: '#F59E0B', label: 'Sunshine' },
-    { name: 'red', color: '#EF4444', label: 'Alert Red' },
-    { name: 'blue', color: '#3B82F6', label: 'Ocean Blue' },
-    { name: 'minimal', color: '#374151', label: 'Minimal' },
-  ];
+  const [customMinutes, setCustomMinutes] = useState(String(overlayConfig.timerMinutes || 5));
 
   const handleApplyCustom = () => {
     const customConfig = {
       title: customTitle,
       buttonText: customButtonText,
       backgroundColor: customColor,
+      timerMinutes: Math.max(1, parseInt(customMinutes || '5', 10)),
     };
     
     updateOverlayConfig(customConfig);
     Alert.alert('Success', 'Custom overlay configuration applied!');
-  };
-
-  const handleApplyTheme = (themeName) => {
-    applyOverlayTheme(themeName);
-    Alert.alert('Success', `${themeName} theme applied!`);
   };
 
   const handleTestOverlay = async () => {
@@ -74,19 +60,7 @@ const OverlayConfigScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Theme Presets */}
-      <Text style={styles.sectionTitle}>Quick Themes</Text>
-      <View style={styles.themesContainer}>
-        {themes.map((theme) => (
-          <TouchableOpacity
-            key={theme.name}
-            style={[styles.themeButton, { backgroundColor: theme.color }]}
-            onPress={() => handleApplyTheme(theme.name)}
-          >
-            <Text style={styles.themeButtonText}>{theme.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Theme Presets removed */}
 
       {/* Custom Configuration */}
       <Text style={styles.sectionTitle}>Custom Configuration</Text>
@@ -123,6 +97,17 @@ const OverlayConfigScreen = () => {
         />
       </View>
 
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Timer Minutes (default 5)</Text>
+        <TextInput
+          style={styles.textInput}
+          value={customMinutes}
+          onChangeText={setCustomMinutes}
+          placeholder="5"
+          keyboardType="number-pad"
+        />
+      </View>
+
       <TouchableOpacity style={styles.applyButton} onPress={handleApplyCustom}>
         <Text style={styles.applyButtonText}>Apply Custom Configuration</Text>
       </TouchableOpacity>
@@ -130,17 +115,7 @@ const OverlayConfigScreen = () => {
       <TouchableOpacity style={styles.testButton} onPress={handleTestOverlay}>
         <Text style={styles.testButtonText}>Test Overlay</Text>
       </TouchableOpacity>
-
-      {/* Instructions */}
-      <View style={styles.instructionsContainer}>
-        <Text style={styles.instructionsTitle}>How it works:</Text>
-        <Text style={styles.instructionsText}>
-          1. Choose a theme or create a custom configuration{'\n'}
-          2. The overlay will appear when you spend 2+ minutes on Instagram Reels{'\n'}
-          3. Your custom styling will be applied to encourage mindful breaks{'\n'}
-          4. Test by scrolling Reels for 2 minutes after applying changes
-        </Text>
-      </View>
+   
     </ScrollView>
   );
 };

@@ -33,6 +33,11 @@ export class DatabaseHelper {
         }
     }
 
+    async deleteDreamImage(): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        await this.db.executeSql('DELETE FROM dream_image');
+    }
+    
     private async createTables() {
         if (!this.db) throw new Error('Database not initialized');
         for (const query of TABLES) {
@@ -63,6 +68,18 @@ export class DatabaseHelper {
     }
 
     // Tasks CRUD
+    async getAllTaskTexts(): Promise<string[]> {
+        if (!this.db) throw new Error('Database not initialized');
+        const results = await this.db.executeSql('SELECT text FROM tasks ORDER BY created_at DESC');
+        const rows = results[0].rows;
+        const texts: string[] = [];
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows.item(i);
+            texts.push(row.text as string);
+        }
+        return texts;
+    }
+
     async getAllTasks(): Promise<Task[]> {
         if (!this.db) throw new Error('Database not initialized');
         const results = await this.db.executeSql('SELECT * FROM tasks ORDER BY created_at DESC');
@@ -70,7 +87,7 @@ export class DatabaseHelper {
         const tasks: Task[] = [];
         for (let i = 0; i < rows.length; i++) {
             const row = rows.item(i);
-            tasks.push({ id: row.id, text: row.text, completed: row.completed === 1, created_at: row.created_at });
+            tasks.push({ id: row.id, text: row.text, completed: !!row.completed, created_at: row.created_at });
         }
         return tasks;
     }

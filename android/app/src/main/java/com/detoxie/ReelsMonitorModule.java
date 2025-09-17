@@ -24,6 +24,8 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
     private static final String TAG = "ReelsMonitorModule";
     private static ReelsMonitorModule instance;
     private ReadableMap overlayConfig;
+    // Explicit fields for quick access
+    private int timerMinutes = 5;
 
     public ReelsMonitorModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -43,6 +45,11 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
     public void configureOverlay(ReadableMap config, Promise promise) {
         try {
             this.overlayConfig = config;
+            if (config != null) {
+                if (config.hasKey("timerMinutes")) {
+                    try { this.timerMinutes = config.getInt("timerMinutes"); } catch (Exception ignored) {}
+                }
+            }
             promise.resolve("Overlay configured successfully");
             Log.d(TAG, "Overlay configuration updated");
         } catch (Exception e) {
@@ -54,6 +61,8 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
     public ReadableMap getOverlayConfig() {
         return overlayConfig;
     }
+
+    public int getTimerMinutes() { return timerMinutes; }
 
     public void sendEventToReactNative(String eventName, WritableMap params) {
         try {

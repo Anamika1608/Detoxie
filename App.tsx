@@ -16,20 +16,7 @@ const Stack = createNativeStackNavigator();
 import "./global.css";
 
 export default function App() {
-  const { updateOverlayConfig, applyOverlayTheme } = usePermissionStore();
 
-  React.useEffect(() => {
-    // Configure overlay on app startup
-    // Option 1: Apply a preset theme
-    applyOverlayTheme('purple'); // or 'green', 'orange', 'red', 'blue', 'minimal'
-    
-    // Option 2: Or use custom configuration
-    // updateOverlayConfig({
-    //   backgroundColor: '#FF6B6B',
-    //   title: 'Time to step away\nfrom the screen! 📱',
-    //   buttonText: 'Take a break',
-    // });
-  }, []);
 
   return (
     <NavigationContainer>

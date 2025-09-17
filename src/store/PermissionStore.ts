@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { NativeModules, AppState } from 'react-native';
+import { dbHelper, DatabaseHelper } from '../database';
 
 const { ReelsMonitorModule } = NativeModules;
 
@@ -16,8 +17,9 @@ export const usePermissionStore = create((set, get) => ({
     backgroundColor: '#5865F2',
     title: 'Make time for what\ntruly matters.',
     buttonText: 'Close',
-    showCat: true,
-    showTimeCircle: true,
+    timerMinutes: 5,
+    todos: [],
+    visionBase64: null,
   },
 
   // Actions
@@ -54,7 +56,23 @@ export const usePermissionStore = create((set, get) => ({
 
   startMonitoring: async () => {
     try {
-      await get().configureOverlay(get().overlayConfig);
+      // Build fresh config from DB: timer, todos, vision
+      const helper: DatabaseHelper = dbHelper;
+      await helper.initializeDatabase();
+      const minutes = (await helper.getTimerMinutes()) ?? 5;
+      const todos = await helper.getAllTaskTexts();
+      const visionBase64 = await helper.getDreamImageBase64();
+
+      const config = {
+        ...get().overlayConfig,
+        timerMinutes: minutes,
+        todos,
+        visionBase64,
+        // Enforce single color/theme from RN
+        backgroundColor: get().overlayConfig.backgroundColor,
+      };
+
+      await get().configureOverlay(config);
       
       await ReelsMonitorModule.startMonitoring();
       set({ 
@@ -152,42 +170,5 @@ export const usePermissionStore = create((set, get) => ({
     get().checkPermissions();
   },
 
-  // Preset overlay themes
-  applyOverlayTheme: (themeName) => {
-    const themes = {
-      purple: {
-        backgroundColor: '#8B5CF6',
-        title: 'Time for a mindful\nbreak! 💜',
-        buttonText: 'Got it!',
-      },
-      green: {
-        backgroundColor: '#10B981',
-        title: 'Nature is calling!\nTake a walk 🌱',
-        buttonText: 'Let\'s go',
-      },
-      orange: {
-        backgroundColor: '#F59E0B',
-        title: 'Sunshine awaits\nyou outside! ☀️',
-        buttonText: 'Step outside',
-      },
-      red: {
-        backgroundColor: '#EF4444',
-        title: 'You\'ve been scrolling\nfor too long! 🔥',
-        buttonText: 'Break free',
-      },
-      blue: {
-        backgroundColor: '#3B82F6',
-        title: 'Your mind needs\na breather 🌊',
-        buttonText: 'Refresh',
-      },
-      minimal: {
-        backgroundColor: '#374151',
-        title: 'Time to disconnect\nand reconnect',
-        buttonText: 'Close',
-      }
-    };
-
-    const theme = themes[themeName] || themes.purple;
-    get().updateOverlayConfig(theme);
-  },
+  // Remove theme presets; single color comes from RN code only
 }));
