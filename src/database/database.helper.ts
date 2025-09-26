@@ -87,16 +87,16 @@ export class DatabaseHelper {
         const tasks: Task[] = [];
         for (let i = 0; i < rows.length; i++) {
             const row = rows.item(i);
-            tasks.push({ id: row.id, text: row.text, completed: !!row.completed, created_at: row.created_at });
+            tasks.push({ id: row.id, text: row.text, created_at: row.created_at });
         }
         return tasks;
     }
 
     async addTask(text: string): Promise<Task> {
         if (!this.db) throw new Error('Database not initialized');
-        const result = await this.db.executeSql('INSERT INTO tasks (text, completed) VALUES (?, ?)', [text, 0]);
+        const result = await this.db.executeSql('INSERT INTO tasks (text) VALUES (?)', [text]);
         const insertId = result[0].insertId;
-        return { id: insertId, text, completed: false } as Task;
+        return { id: insertId, text } as Task;
     }
 
     async deleteTask(id: number): Promise<void> {

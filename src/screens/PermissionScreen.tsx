@@ -48,7 +48,7 @@ function PermissionScreen() {
                 {/* Scrollable content */}
                 <ScrollView className="flex-1 px-6 pt-8">
                     {/* Header text */}
-                    <View className="mt-20">
+                    <View className="mt-12">
                         <ThemedText className="text-black text-3xl leading-tight">
                             For the best detox{'\n'}experience, we need a few permissions!
                         </ThemedText>
