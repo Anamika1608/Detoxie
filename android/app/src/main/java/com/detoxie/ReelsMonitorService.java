@@ -322,7 +322,7 @@ public class ReelsMonitorService extends AccessibilityService {
 
         // Title text
         TextView titleText = new TextView(this);
-        String titleMessage = "Make time for what\ntruly matters.";
+        String titleMessage = "Stop Doom Scrolling.\n Make time for what\ntruly matters.";
         if (config != null && config.hasKey("title")) {
             titleMessage = config.getString("title");
         }
