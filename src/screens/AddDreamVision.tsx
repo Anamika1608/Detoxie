@@ -70,59 +70,56 @@ function AddDreamVisionScreen() {
 
     return (
         <SafeAreaView className="flex-1 bg-[#FBF7EF]">
+            {/* Header text */}
+            <View className="pt-12 px-6">
+                <ThemedText className="text-black text-3xl leading-10 mb-2" style={{ fontFamily: 'YoungSerif-Regular' }}>
+                    Add your dream photo that inspires you.
+                </ThemedText>
+            </View>
+
             {/* Scrollable content */}
             <ScrollView
                 className="flex-1"
-                contentContainerStyle={{ paddingBottom: 20 }}
+                contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Main content */}
-                <View className="pt-12 px-4">
-                    {/* Header text */}
-                    <View className="mb-8 px-2 mr-0">
-                        <ThemedText className="text-black text-3xl leading-10 mb-2 mx-4" style={{ fontFamily: 'YoungSerif-Regular' }}>
-                            Add your dream photo that inspires you.
-                        </ThemedText>
-                    </View>
-
-                    {/* Image Container */}
-                    <View className="items-center mb-8 mt-10">
-                        {imageBase64 ? (
-                            <View style={{ position: 'relative' }}>
-                                <View className="bg-white rounded-2xl shadow-lg p-2" style={{
-                                    width: screenWidth - 48,
-                                    maxWidth: 320,
-                                }}>
-                                    <Image
-                                        source={{ uri: `data:image/jpeg;base64,${imageBase64}` }}
-                                        style={{
-                                            width: '100%',
-                                            aspectRatio: 1,
-                                            borderRadius: 12,
-                                        }}
-                                        resizeMode="contain"
-                                    />
-                                </View>
-
-                                {/* Delete button */}
-                                <TouchableOpacity
-                                    onPress={deleteImage}
-                                    disabled={loading}
-                                    className="absolute -top-2.5 -right-2.5 bg-blue-100 rounded-full p-2 rounded-full w-10 h-10 justify-center items-center shadow-lg"
-                                >
-                                    <Text className="text-black text-xl font-bold leading-5">
-                                        ×
-                                    </Text>
-                                </TouchableOpacity>
+                {/* Image Container */}
+                <View className="items-center px-4">
+                    {imageBase64 ? (
+                        <View style={{ position: 'relative' }}>
+                            <View className="bg-white rounded-2xl shadow-lg p-2" style={{
+                                width: screenWidth - 48,
+                                maxWidth: 320,
+                            }}>
+                                <Image
+                                    source={{ uri: `data:image/jpeg;base64,${imageBase64}` }}
+                                    style={{
+                                        width: '100%',
+                                        aspectRatio: 1,
+                                        borderRadius: 12,
+                                    }}
+                                    resizeMode="contain"
+                                />
                             </View>
-                        ) : (
-                            <Image
-                                source={dreamVision}
-                                className="w-[250px] h-[250px] scale-150"
-                                resizeMode="contain"
-                            />
-                        )}
-                    </View>
+
+                            {/* Delete button */}
+                            <TouchableOpacity
+                                onPress={deleteImage}
+                                disabled={loading}
+                                className="absolute -top-2.5 -right-2.5 bg-blue-100 p-2 rounded-full w-10 h-10 justify-center items-center shadow-lg"
+                            >
+                                <Text className="text-black text-xl font-bold leading-5">
+                                    ×
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <Image
+                            source={dreamVision}
+                            className="w-[250px] h-[250px] scale-150"
+                            resizeMode="contain"
+                        />
+                    )}
                 </View>
             </ScrollView>
 
