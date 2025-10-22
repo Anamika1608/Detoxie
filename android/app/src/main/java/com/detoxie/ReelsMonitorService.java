@@ -361,7 +361,7 @@ public class ReelsMonitorService extends AccessibilityService {
                 }
             } catch (Exception ignored) {}
         }
-
+ 
         // Optional todos list
         if (todosArray != null && todosArray.size() > 0) {
             LinearLayout listContainer = new LinearLayout(this);

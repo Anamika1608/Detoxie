@@ -1,16 +1,21 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Image, ScrollView, SafeAreaView, Alert, Dimensions, TouchableOpacity } from 'react-native';
 import dreamVision from "../assets/illustrations/dream.png";
+import memeImage from "../assets/meme/meme.png";
 import { ThemedText } from '../ui/ThemedText';
 import { dbHelper } from '../database';
 import { launchImageLibrary } from 'react-native-image-picker';
 import CustomButton from '../ui/CustomButton';
+import { usePermissionStore } from '../store/PermissionStore';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 function AddDreamVisionScreen() {
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const { overlayConfig } = usePermissionStore() as any;
+    
+    const shouldShowMemeImage = overlayConfig.title === "Stop Doom Scrolling.\n Make time for what\ntruly matters.";
 
     useEffect(() => {
         (async () => {
@@ -31,9 +36,6 @@ function AddDreamVisionScreen() {
                 includeBase64: true,
                 selectionLimit: 1,
                 quality: 0.8,
-                fixOrientation: true,
-                maxWidth: 800,
-                maxHeight: 800,
             });
 
             if (res.didCancel) return;
@@ -115,7 +117,7 @@ function AddDreamVisionScreen() {
                         </View>
                     ) : (
                         <Image
-                            source={dreamVision}
+                            source={shouldShowMemeImage ? memeImage : dreamVision}
                             className="w-[250px] h-[250px] scale-150"
                             resizeMode="contain"
                         />
