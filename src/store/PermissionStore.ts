@@ -4,7 +4,42 @@ import { dbHelper, DatabaseHelper } from '../database';
 
 const { ReelsMonitorModule } = NativeModules;
 
-export const usePermissionStore = create((set, get) => ({
+interface PermissionStore {
+  // State
+  hasAccessibilityPermission: boolean;
+  hasOverlayPermission: boolean;
+  reelsStatus: string;
+  isMonitoring: boolean;
+  showPermissionModal: boolean;
+  permissionModalType: string | null;
+  isCheckingPermissions: boolean;
+  overlayConfig: {
+    backgroundColor: string;
+    title: string;
+    buttonText: string;
+    timerMinutes: number;
+    todos: any[];
+    visionBase64: string | null;
+  };
+  isVacationMode: boolean;
+
+  // Actions
+  setHasAccessibilityPermission: (hasPermission: boolean) => void;
+  setHasOverlayPermission: (hasPermission: boolean) => void;
+  setReelsStatus: (status: string) => void;
+  setIsMonitoring: (monitoring: boolean) => void;
+  setShowPermissionModal: (show: boolean, type?: string | null) => void;
+  configureOverlay: (config: any) => Promise<void>;
+  updateOverlayConfig: (newConfig: any) => void;
+  setVacationMode: (isVacationMode: boolean) => Promise<void>;
+  startMonitoring: () => Promise<void>;
+  stopMonitoring: () => Promise<void>;
+  checkPermissions: () => Promise<void>;
+  requestAccessibilityPermission: () => Promise<void>;
+  requestOverlayPermission: () => Promise<void>;
+}
+
+export const usePermissionStore = create<PermissionStore>((set, get) => ({
   // State
   hasAccessibilityPermission: false,
   hasOverlayPermission: false,
@@ -21,6 +56,7 @@ export const usePermissionStore = create((set, get) => ({
     todos: [],
     visionBase64: null,
   },
+  isVacationMode: false,
 
   // Actions
   setHasAccessibilityPermission: (hasPermission) =>
@@ -52,6 +88,16 @@ export const usePermissionStore = create((set, get) => ({
     const updatedConfig = { ...get().overlayConfig, ...newConfig };
     set({ overlayConfig: updatedConfig });
     get().configureOverlay(updatedConfig);
+  },
+
+  setVacationMode: async (isVacationMode) => {
+    try {
+      await ReelsMonitorModule.setVacationMode(isVacationMode);
+      set({ isVacationMode });
+      console.log('Vacation mode updated:', isVacationMode);
+    } catch (error) {
+      console.error('Error setting vacation mode:', error);
+    }
   },
 
   startMonitoring: async () => {

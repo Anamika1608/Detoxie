@@ -26,6 +26,7 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
     private ReadableMap overlayConfig;
     // Explicit fields for quick access
     private int timerMinutes = 5;
+    private boolean isVacationMode = false;
 
     public ReelsMonitorModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -63,6 +64,20 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
     }
 
     public int getTimerMinutes() { return timerMinutes; }
+
+    @ReactMethod
+    public void setVacationMode(boolean isVacationMode, Promise promise) {
+        try {
+            this.isVacationMode = isVacationMode;
+            promise.resolve("Vacation mode updated successfully");
+            Log.d(TAG, "Vacation mode set to: " + isVacationMode);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to set vacation mode", e);
+            promise.reject("ERROR", "Failed to set vacation mode: " + e.getMessage());
+        }
+    }
+
+    public boolean isVacationMode() { return isVacationMode; }
 
     public void sendEventToReactNative(String eventName, WritableMap params) {
         try {

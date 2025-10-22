@@ -37,6 +37,23 @@ export class DatabaseHelper {
         if (!this.db) throw new Error('Database not initialized');
         await this.db.executeSql('DELETE FROM dream_image');
     }
+
+    // Vacation mode helpers
+    async getVacationMode(): Promise<boolean> {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = await this.db.executeSql(
+            'SELECT is_vacation_mode FROM vacation_mode ORDER BY updated_at DESC LIMIT 1'
+        );
+        return result[0].rows.length > 0 ? Boolean(result[0].rows.item(0).is_vacation_mode) : false;
+    }
+
+    async setVacationMode(isVacationMode: boolean): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        await this.db.executeSql(
+            'INSERT OR REPLACE INTO vacation_mode (id, is_vacation_mode, updated_at) VALUES (1, ?, CURRENT_TIMESTAMP)',
+            [isVacationMode ? 1 : 0]
+        );
+    }
     
     private async createTables() {
         if (!this.db) throw new Error('Database not initialized');

@@ -118,6 +118,13 @@ public class ReelsMonitorService extends AccessibilityService {
             boolean halfShown = prefs.getBoolean(DAILY_HALF_SHOWN_KEY, false);
             boolean limitReached = prefs.getBoolean(DAILY_LIMIT_REACHED_KEY, false);
 
+            // Check if vacation mode is enabled - if so, don't show any overlays
+            ReelsMonitorModule module = ReelsMonitorModule.getInstance();
+            if (module != null && module.isVacationMode()) {
+                Log.d(TAG, "Vacation mode is enabled, skipping overlay display");
+                return;
+            }
+
             if (limitReached) {
                 showOverlay(totalElapsedToday, /*allowClose*/ false);
                 return;
