@@ -37,6 +37,10 @@ interface PermissionStore {
   checkPermissions: () => Promise<void>;
   requestAccessibilityPermission: () => Promise<void>;
   requestOverlayPermission: () => Promise<void>;
+  initialize: () => Promise<void>;
+  setupAppStateListener: () => void;
+  handlePermissionModalProceed: () => Promise<void>;
+  handlePermissionModalCancel: () => void;
 }
 
 export const usePermissionStore = create<PermissionStore>((set, get) => ({
@@ -133,6 +137,19 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
     }
   },
 
+  stopMonitoring: async () => {
+    try {
+      await ReelsMonitorModule.stopMonitoring();
+      set({ 
+        isMonitoring: false,
+        reelsStatus: 'Monitoring Stopped'
+      });
+    } catch (error) {
+      console.error('Error stopping monitoring:', error);
+      set({ reelsStatus: 'Error stopping monitoring' });
+    }
+  },
+
   checkPermissions: async () => {
     if (get().isCheckingPermissions) return;
     
@@ -197,7 +214,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
   },
 
   setupAppStateListener: () => {
-    const handleAppStateChange = (nextAppState) => {
+    const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
         setTimeout(() => {
           get().checkPermissions();
@@ -212,8 +229,8 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
     }, 120000);
   },
 
-  initialize: () => {
-    get().checkPermissions();
+  initialize: async () => {
+    await get().checkPermissions();
   },
 
   // Remove theme presets; single color comes from RN code only

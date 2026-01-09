@@ -82,8 +82,8 @@ android {
         applicationId "com.detoxie"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 9
+        versionName "1.1.4"
     }
     signingConfigs {
         debug {
