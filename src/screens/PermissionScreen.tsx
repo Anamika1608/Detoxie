@@ -1,5 +1,6 @@
 import React from 'react'
-import { View, SafeAreaView, ScrollView, Image } from 'react-native'
+import { View, ScrollView, Image } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { PermissionCard } from '../components/PermissionCard'
 import usePermissionTracker from '../hooks/usePermissionTracker';
 import permissions from "../assets/illustrations/permissions.png";
@@ -25,7 +26,7 @@ function PermissionScreen() {
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-[#FBF7EF]">
+        <SafeAreaView className="flex-1 bg-[#FBF7EF]" edges={['top', 'left', 'right', 'bottom']}>
             <View
                 className="absolute top-3 right-5 w-[17px] h-[17px] bg-[#FFBF75] rounded-full"
             />

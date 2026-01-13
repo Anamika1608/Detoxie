@@ -2,6 +2,7 @@ import * as React from 'react';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar, View, ActivityIndicator } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { usePermissionStore } from './src/store/PermissionStore';
 import HomeScreen from './src/screens/HomeScreen';
 import WelcomeScreen from './src/screens/WelcomeScreen';
@@ -56,30 +57,34 @@ export default function App() {
 
   if (!didInit || isCheckingPermissions) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'white' }}>
-        <StatusBar backgroundColor="white" barStyle="dark-content" />
-        <ActivityIndicator size="large" color="#5865F2" />
-      </View>
+      <SafeAreaProvider>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'white' }}>
+          <StatusBar backgroundColor="white" barStyle="dark-content" translucent />
+          <ActivityIndicator size="large" color="#5865F2" />
+        </View>
+      </SafeAreaProvider>
     );
   }
 
   return (
-    <NavigationContainer ref={navigationRef}>
-      <StatusBar backgroundColor="white" barStyle="dark-content" />
+    <SafeAreaProvider>
+      <NavigationContainer ref={navigationRef}>
+        <StatusBar backgroundColor="transparent" barStyle="dark-content" translucent />
 
-      <Stack.Navigator
-        key={bothPermissionsGranted ? 'authed' : 'onboard'}
-        initialRouteName={bothPermissionsGranted ? "Home" : "Welcome"}
-        screenOptions={{ headerShown: false }}
-      >
-        <Stack.Screen name="Welcome" component={WelcomeScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Permission" component={PermissionScreen} />
-        <Stack.Screen name="SetTimer" component={SetTimerScreen} />
-        <Stack.Screen name="AddToDo" component={AddTodoScreen} />
-        <Stack.Screen name="AddDreamVision" component={AddDreamVision} />
-        
-      </Stack.Navigator>
-    </NavigationContainer>
+        <Stack.Navigator
+          key={bothPermissionsGranted ? 'authed' : 'onboard'}
+          initialRouteName={bothPermissionsGranted ? "Home" : "Welcome"}
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Permission" component={PermissionScreen} />
+          <Stack.Screen name="SetTimer" component={SetTimerScreen} />
+          <Stack.Screen name="AddToDo" component={AddTodoScreen} />
+          <Stack.Screen name="AddDreamVision" component={AddDreamVision} />
+
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
