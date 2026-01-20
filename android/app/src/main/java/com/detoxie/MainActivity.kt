@@ -1,6 +1,5 @@
 package com.detoxie
 
-import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.enableEdgeToEdge
@@ -12,16 +11,12 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 class MainActivity : ReactActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    // Enable edge-to-edge display BEFORE super.onCreate() for proper initialization
-    enableEdgeToEdge()
-
     super.onCreate(savedInstanceState)
-
-    // Set display cutout mode to ALWAYS for Android 15+ compatibility (API 28+)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-      window.attributes.layoutInDisplayCutoutMode =
-          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-    }
+    // Enable edge-to-edge display (replaces deprecated setDecorFitsSystemWindows)
+    enableEdgeToEdge()
+    // Set display cutout mode to ALWAYS for Android 15+ compatibility
+    window.attributes.layoutInDisplayCutoutMode =
+        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
   }
 
   /**
