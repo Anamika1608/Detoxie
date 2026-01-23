@@ -30,7 +30,6 @@ export default function App() {
   const navigationRef = useNavigationContainerRef<RootStackParamList>();
   const hasAccessibilityPermission = usePermissionStore((state) => state.hasAccessibilityPermission);
   const hasOverlayPermission = usePermissionStore((state) => state.hasOverlayPermission);
-  const isCheckingPermissions = usePermissionStore((state) => state.isCheckingPermissions);
   const initialize = usePermissionStore((state) => state.initialize);
 
   const [didInit, setDidInit] = React.useState(false);
@@ -55,7 +54,7 @@ export default function App() {
     }
   }, [bothPermissionsGranted, didInit, navigationRef]);
 
-  if (!didInit || isCheckingPermissions) {
+  if (!didInit) {
     return (
       <SafeAreaProvider>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'white' }}>
