@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import { ThemedText } from '../ui/ThemedText'
 import CustomButton from '../ui/CustomButton'
 import Slider from '@react-native-community/slider'
@@ -44,15 +43,14 @@ function SetTimerScreen() {
     }
 
     return (
-        <SafeAreaView className='flex-1 bg-[#FBF7EF]' edges={['top', 'left', 'right', 'bottom']}>
-            <View className='flex-1 px-6'>
-                {/* Header */}
-                <Text
-                    className='text-3xl text-center mt-8 text-[#4C4B7E]'
-                    style={{ fontFamily: 'YoungSerif-Regular' }}
-                >
-                    Set timer
-                </Text>
+        <View className='flex-1 bg-[#FBF7EF] px-6'>
+            {/* Header */}
+            <Text
+                className='text-3xl text-center mt-16 text-[#4C4B7E]'
+                style={{ fontFamily: 'YoungSerif-Regular' }}
+            >
+                Set timer
+            </Text>
 
             <ThemedText className='text-lg text-center mt-4 text-gray-600 px-4'>
                 Once the timer runs out, we'll remind you to focus on what truly matters.
@@ -145,16 +143,15 @@ function SetTimerScreen() {
                 </View>
             </View>
 
-                {/* Continue Button */}
-                <View className='mb-8'>
-                    <CustomButton
-                        onPress={handleSetTimer}
-                        title='Save'
-                        className='bg-black'
-                    />
-                </View>
+            {/* Continue Button */}
+            <View className='mb-8'>
+                <CustomButton
+                    onPress={handleSetTimer}
+                    title='Save'
+                    className='bg-black'
+                />
             </View>
-        </SafeAreaView>
+        </View>
     )
 }
 

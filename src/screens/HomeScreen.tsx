@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, Image, ScrollView, SafeAreaView } from 'react-native';
 import ActionCard from '../components/ActionCard'; 
 import home from "../assets/illustrations/home.png";
 import vacation from "../assets/illustrations/vacation.png";
@@ -58,8 +57,8 @@ function HomeScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-[#FBF7EF]" edges={['top', 'left', 'right', 'bottom']}>
-            <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
+        <SafeAreaView className="flex-1 bg-[#FBF7EF]">
+            <ScrollView className="flex-1">
                 <Image
                         source={homeScreen}
                         className="absolute -top-56 -left-60 scale-[0.4] rotate-12 shadow-sm"

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Image, ScrollView, Alert, Dimensions, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, Image, ScrollView, SafeAreaView, Alert, Dimensions, TouchableOpacity } from 'react-native';
 import dreamVision from "../assets/illustrations/dream.png";
 import memeImage from "../assets/meme/meme.png";
 import { ThemedText } from '../ui/ThemedText';
@@ -72,9 +71,9 @@ function AddDreamVisionScreen() {
     }, []);
 
     return (
-        <SafeAreaView className="flex-1 bg-[#FBF7EF]" edges={['top', 'left', 'right', 'bottom']}>
+        <SafeAreaView className="flex-1 bg-[#FBF7EF]">
             {/* Header text */}
-            <View className="pt-8 px-6">
+            <View className="pt-12 px-6">
                 <ThemedText className="text-black text-3xl leading-10 mb-2" style={{ fontFamily: 'YoungSerif-Regular' }}>
                     Add your dream photo that inspires you.
                 </ThemedText>
