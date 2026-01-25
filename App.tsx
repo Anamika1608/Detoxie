@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusBar, View, ActivityIndicator } from 'react-native';
+import { StatusBar, View } from 'react-native';
 import { usePermissionStore } from './src/store/PermissionStore';
 import HomeScreen from './src/screens/HomeScreen';
 import WelcomeScreen from './src/screens/WelcomeScreen';
@@ -55,9 +55,8 @@ export default function App() {
 
   if (!didInit) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'white' }}>
-        <StatusBar backgroundColor="white" barStyle="dark-content" />
-        <ActivityIndicator size="large" color="#5865F2" />
+      <View style={{ flex: 1, backgroundColor: '#FBF7EF' }}>
+        <StatusBar backgroundColor="#FBF7EF" barStyle="dark-content" />
       </View>
     );
   }
