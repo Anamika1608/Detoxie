@@ -3,13 +3,13 @@ import { CustomAlert, CustomToast, useAlert, useToast } from '../components/Cust
 import {
     View,
     TouchableOpacity,
+    SafeAreaView,
     ScrollView,
     TextInput,
     KeyboardAvoidingView,
     Platform,
     Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import SQLite from 'react-native-sqlite-storage';
 import { ThemedText } from '../ui/ThemedText';
 import { Image } from 'react-native';
@@ -196,14 +196,14 @@ const TaskPriorityScreen = () => {
 
     if (isLoading) {
         return (
-            <SafeAreaView className="flex-1 bg-[#FBF7EF] justify-center items-center" edges={['top', 'left', 'right', 'bottom']}>
+            <SafeAreaView className="flex-1 bg-[#FBF7EF] justify-center items-center">
                 <ThemedText className="text-lg text-gray-600">Loading tasks...</ThemedText>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-[#FBF7EF]" edges={['top', 'left', 'right', 'bottom']}>
+        <SafeAreaView className="flex-1 bg-blue-50">
             <KeyboardAvoidingView
                 className='flex-1 bg-[#FBF7EF] px-6'
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

@@ -1,8 +1,7 @@
 import * as React from 'react';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusBar, View, ActivityIndicator } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StatusBar, View } from 'react-native';
 import { usePermissionStore } from './src/store/PermissionStore';
 import HomeScreen from './src/screens/HomeScreen';
 import WelcomeScreen from './src/screens/WelcomeScreen';
@@ -30,7 +29,6 @@ export default function App() {
   const navigationRef = useNavigationContainerRef<RootStackParamList>();
   const hasAccessibilityPermission = usePermissionStore((state) => state.hasAccessibilityPermission);
   const hasOverlayPermission = usePermissionStore((state) => state.hasOverlayPermission);
-  const isCheckingPermissions = usePermissionStore((state) => state.isCheckingPermissions);
   const initialize = usePermissionStore((state) => state.initialize);
 
   const [didInit, setDidInit] = React.useState(false);
@@ -55,36 +53,31 @@ export default function App() {
     }
   }, [bothPermissionsGranted, didInit, navigationRef]);
 
-  if (!didInit || isCheckingPermissions) {
+  if (!didInit) {
     return (
-      <SafeAreaProvider>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'white' }}>
-          <StatusBar backgroundColor="white" barStyle="dark-content" translucent />
-          <ActivityIndicator size="large" color="#5865F2" />
-        </View>
-      </SafeAreaProvider>
+      <View style={{ flex: 1, backgroundColor: '#FBF7EF' }}>
+        <StatusBar backgroundColor="#FBF7EF" barStyle="dark-content" />
+      </View>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <NavigationContainer ref={navigationRef}>
-        <StatusBar backgroundColor="transparent" barStyle="dark-content" translucent />
+    <NavigationContainer ref={navigationRef}>
+      <StatusBar backgroundColor="white" barStyle="dark-content" />
 
-        <Stack.Navigator
-          key={bothPermissionsGranted ? 'authed' : 'onboard'}
-          initialRouteName={bothPermissionsGranted ? "Home" : "Welcome"}
-          screenOptions={{ headerShown: false }}
-        >
-          <Stack.Screen name="Welcome" component={WelcomeScreen} />
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Permission" component={PermissionScreen} />
-          <Stack.Screen name="SetTimer" component={SetTimerScreen} />
-          <Stack.Screen name="AddToDo" component={AddTodoScreen} />
-          <Stack.Screen name="AddDreamVision" component={AddDreamVision} />
-
-        </Stack.Navigator>
-      </NavigationContainer>
-    </SafeAreaProvider>
+      <Stack.Navigator
+        key={bothPermissionsGranted ? 'authed' : 'onboard'}
+        initialRouteName={bothPermissionsGranted ? "Home" : "Welcome"}
+        screenOptions={{ headerShown: false }}
+      >
+        <Stack.Screen name="Welcome" component={WelcomeScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Permission" component={PermissionScreen} />
+        <Stack.Screen name="SetTimer" component={SetTimerScreen} />
+        <Stack.Screen name="AddToDo" component={AddTodoScreen} />
+        <Stack.Screen name="AddDreamVision" component={AddDreamVision} />
+        
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
