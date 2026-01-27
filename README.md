@@ -2,6 +2,8 @@
 
 Detoxie is a React Native application that integrates with Android's **Accessibility Service** to detect and track user activity (such as time spent on Reels/Explore). It uses a **custom Native Module** to bridge communication between the native Android code and the React Native (JS/TS) layer.
 
+live on google play - https://play.google.com/store/apps/details?id=com.detoxie
+
 ## App Working
 
 https://github.com/user-attachments/assets/2cb0b092-5746-4a6b-97e2-7ef4b5c4d710
