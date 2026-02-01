@@ -3,6 +3,7 @@ package com.detoxie;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.provider.Settings;
 import android.text.TextUtils;
@@ -18,17 +19,18 @@ import com.facebook.react.bridge.Arguments;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.module.annotations.ReactModule;
 
-@ReactModule(name = ReelsMonitorModule.NAME)
-public class ReelsMonitorModule extends ReactContextBaseJavaModule {
-    public static final String NAME = "ReelsMonitorModule";
-    private static final String TAG = "ReelsMonitorModule";
-    private static ReelsMonitorModule instance;
+@ReactModule(name = ContentMonitorModule.NAME)
+public class ContentMonitorModule extends ReactContextBaseJavaModule {
+    public static final String NAME = "ContentMonitorModule";
+    private static final String TAG = "ContentMonitorModule";
+    private static final String PREFS_NAME = "ContentMonitorPrefs";
+    private static ContentMonitorModule instance;
     private ReadableMap overlayConfig;
     // Explicit fields for quick access
     private int timerMinutes = 5;
     private boolean isVacationMode = false;
 
-    public ReelsMonitorModule(ReactApplicationContext reactContext) {
+    public ContentMonitorModule(ReactApplicationContext reactContext) {
         super(reactContext);
         instance = this;
     }
@@ -38,7 +40,7 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
         return NAME;
     }
 
-    public static ReelsMonitorModule getInstance() {
+    public static ContentMonitorModule getInstance() {
         return instance;
     }
 
@@ -78,6 +80,26 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
     }
 
     public boolean isVacationMode() { return isVacationMode; }
+
+    @ReactMethod
+    public void getPlatformStats(Promise promise) {
+        try {
+            SharedPreferences prefs = getReactApplicationContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+
+            WritableMap stats = Arguments.createMap();
+            stats.putDouble("instagramTimeToday", prefs.getLong("instagram_daily_ms", 0) / 1000.0);
+            stats.putDouble("youtubeTimeToday", prefs.getLong("youtube_daily_ms", 0) / 1000.0);
+            stats.putDouble("totalTimeToday", prefs.getLong("daily_accumulated_ms", 0) / 1000.0);
+            stats.putDouble("totalTimeAllTime", prefs.getLong("total_time_spent", 0) / 1000.0);
+            stats.putInt("sessionCount", prefs.getInt("session_count", 0));
+            stats.putString("lastSessionDate", prefs.getString("last_session_date", ""));
+
+            promise.resolve(stats);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to get platform stats", e);
+            promise.reject("ERROR", "Failed to get platform stats: " + e.getMessage());
+        }
+    }
 
     public void sendEventToReactNative(String eventName, WritableMap params) {
         try {
@@ -149,7 +171,7 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
             Log.e(TAG, "Failed to open overlay permission settings", e);
             promise.reject("ERROR", "Failed to open overlay permission settings: " + e.getMessage());
         }
-    }  
+    }
 
     @ReactMethod
     public void startMonitoring(Promise promise) {
@@ -161,7 +183,7 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
                 promise.reject("PERMISSION_ERROR", "Accessibility or overlay permission not granted");
                 return;
             }
-            
+
             promise.resolve("Monitoring started");
         } catch (Exception e) {
             Log.e(TAG, "Failed to start monitoring", e);
@@ -169,13 +191,23 @@ public class ReelsMonitorModule extends ReactContextBaseJavaModule {
         }
     }
 
+    @ReactMethod
+    public void addListener(String eventName) {
+        // Required for NativeEventEmitter
+    }
+
+    @ReactMethod
+    public void removeListeners(int count) {
+        // Required for NativeEventEmitter
+    }
+
     private boolean isAccessibilityServiceEnabled() {
-        String service = getReactApplicationContext().getPackageName() + "/" + ReelsMonitorService.class.getCanonicalName();
+        String service = getReactApplicationContext().getPackageName() + "/" + ContentMonitorService.class.getCanonicalName();
         String enabledServices = Settings.Secure.getString(
             getReactApplicationContext().getContentResolver(),
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         );
-        
+
         return enabledServices != null && enabledServices.contains(service);
     }
 

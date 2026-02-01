@@ -8,10 +8,10 @@ import com.facebook.react.uimanager.ViewManager;
 import java.util.Collections;
 import java.util.List;
 
-public class ReelsMonitorPackage implements ReactPackage {
+public class ContentMonitorPackage implements ReactPackage {
     @Override
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
-        return Collections.singletonList(new ReelsMonitorModule(reactContext));
+        return Collections.singletonList(new ContentMonitorModule(reactContext));
     }
 
     @Override
