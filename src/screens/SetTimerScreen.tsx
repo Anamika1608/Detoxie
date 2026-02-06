@@ -5,10 +5,12 @@ import CustomButton from '../ui/CustomButton'
 import Slider from '@react-native-community/slider'
 import LinearGradient from 'react-native-linear-gradient'
 import { dbHelper } from '../database'
+import { usePermissionStore } from '../store/PermissionStore'
 
 function SetTimerScreen() {
     const [timerValue, setTimerValue] = useState(10)
     const [saveStatus, setSaveStatus] = useState('idle')
+    const updateOverlayConfig = usePermissionStore((state) => state.updateOverlayConfig)
 
     useEffect(() => {
         const init = async () => {
@@ -22,7 +24,7 @@ function SetTimerScreen() {
         init()
     }, [])
 
-    const handleSliderChange = (value) => {
+    const handleSliderChange = (value: number) => {
         const roundedValue = Math.round(value / 5) * 5
         setTimerValue(roundedValue)
     }
@@ -31,6 +33,7 @@ function SetTimerScreen() {
         setSaveStatus('saving')
         try {
             await dbHelper.setTimerMinutes(timerValue)
+            updateOverlayConfig({ timerMinutes: timerValue })
             setSaveStatus('saved')
 
             setTimeout(() => {
@@ -109,13 +112,15 @@ function SetTimerScreen() {
                 </View>
 
                 {/* Save Status Message */}
-                {saveStatus === 'saved' && (
-                    <View className='mt-4 bg-green-100 px-4 py-2 rounded-2xl'>
-                        <ThemedText className='text-green-700 font-medium'>
-                            Timer saved!
-                        </ThemedText>
-                    </View>
-                )}
+                <View className='mt-4 h-10 items-center justify-center'>
+                    {saveStatus === 'saved' && (
+                        <View className='bg-green-100 px-4 py-2 rounded-2xl'>
+                            <ThemedText className='text-green-700 font-medium'>
+                                Timer saved!
+                            </ThemedText>
+                        </View>
+                    )}
+                </View>
             </View>
 
             {/* Slider Container */}

@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, SafeAreaView, ScrollView, Text } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { ThemedText } from '../ui/ThemedText';
 import { CircularProgress } from '../components/CircularProgress';
 import { PlatformCard } from '../components/PlatformCard';
 import { useContentTracker } from '../hooks/useContentTracker';
+import { dbHelper } from '../database';
 import { usePermissionStore } from '../store/PermissionStore';
 
 const PLATFORM_CONFIG = {
@@ -20,15 +22,13 @@ const PLATFORM_CONFIG = {
 function PlatformStatsScreen() {
   const { platformStats, loadPlatformStats } = useContentTracker();
   const { overlayConfig } = usePermissionStore();
+  const [limitMinutes, setLimitMinutes] = useState(overlayConfig.timerMinutes || 5);
 
-  const limitMinutes = overlayConfig.timerMinutes || 5;
   const limitSeconds = limitMinutes * 60;
 
   // Raw time spent
   const rawTotalTimeSpent = (platformStats.instagram || 0) + (platformStats.youtube || 0);
 
-  // Cap total time at limit (don't show overflow)
-  const totalTimeSpent = Math.min(rawTotalTimeSpent, limitSeconds);
   const remainingSeconds = Math.max(0, limitSeconds - rawTotalTimeSpent);
   const overallProgress = Math.min(rawTotalTimeSpent / limitSeconds, 1);
 
@@ -40,9 +40,31 @@ function PlatformStatsScreen() {
     ? Math.round((platformStats.youtube || 0) / rawTotalTimeSpent * limitSeconds)
     : (platformStats.youtube || 0);
 
+  const refreshLimitMinutes = useCallback(async () => {
+    try {
+      await dbHelper.initializeDatabase();
+      const savedLimit = await dbHelper.getTimerMinutes();
+      if (typeof savedLimit === 'number' && savedLimit > 0) {
+        setLimitMinutes(savedLimit);
+        return;
+      }
+    } catch (error) {
+      console.error('Error loading timer minutes for stats:', error);
+    }
+
+    setLimitMinutes(overlayConfig.timerMinutes || 5);
+  }, [overlayConfig.timerMinutes]);
+
   useEffect(() => {
-    loadPlatformStats();
-  }, [loadPlatformStats]);
+    setLimitMinutes(overlayConfig.timerMinutes || 5);
+  }, [overlayConfig.timerMinutes]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadPlatformStats();
+      refreshLimitMinutes();
+    }, [loadPlatformStats, refreshLimitMinutes])
+  );
 
   const formatTimeDisplay = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -51,7 +73,6 @@ function PlatformStatsScreen() {
   };
 
   const remaining = formatTimeDisplay(remainingSeconds);
-  const used = formatTimeDisplay(totalTimeSpent);
 
   return (
     <SafeAreaView className="flex-1 bg-[#FBF7EF]">
