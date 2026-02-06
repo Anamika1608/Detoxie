@@ -48,5 +48,15 @@ export const TABLES = [
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     is_vacation_mode INTEGER NOT NULL DEFAULT 0,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS platform_daily_stats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    platform TEXT NOT NULL,
+    total_duration REAL NOT NULL DEFAULT 0,
+    session_count INTEGER NOT NULL DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(date, platform)
   )`
 ];

@@ -21,7 +21,7 @@ function PermissionScreen() {
     const bothPermissionsGranted = hasAccessibilityPermission && hasOverlayPermission;
 
     const handleContinue = () => {
-        navigation.navigate('Home');
+        navigation.navigate('MainTabs');
     }
 
     return (

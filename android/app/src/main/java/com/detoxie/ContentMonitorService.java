@@ -78,8 +78,36 @@ public class ContentMonitorService extends AccessibilityService {
 
         String packageName = event.getPackageName().toString();
 
-        // If overlay is showing, handle carefully
+        // If overlay is showing, keep it visible only while user remains in tracked sections
         if (isOverlayShowing) {
+            if (YOUTUBE_PACKAGE.equals(packageName)) {
+                AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+                boolean shortsSectionActive = rootNode != null && isYouTubeShortsActive(rootNode);
+
+                if (!shortsSectionActive) {
+                    String previousPlatform = currentPlatform;
+                    Log.d(TAG, "User left YouTube Shorts while overlay was showing");
+                    onExitContentIfNeeded();
+                    String status = PLATFORM_YOUTUBE.equals(previousPlatform) ? "Left Shorts" : "Left App";
+                    sendEventToReactNative("ContentEvent", createEventMap(status, previousPlatform, getTotalTimeSpent()));
+                }
+                return;
+            }
+
+            if (INSTAGRAM_PACKAGE.equals(packageName)) {
+                AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+                boolean reelsSectionActive = rootNode != null && isReelsSectionActive(rootNode);
+
+                if (!reelsSectionActive) {
+                    String previousPlatform = currentPlatform;
+                    Log.d(TAG, "User left Instagram Reels while overlay was showing");
+                    onExitContentIfNeeded();
+                    String status = PLATFORM_INSTAGRAM.equals(previousPlatform) ? "Left Reels" : "Left App";
+                    sendEventToReactNative("ContentEvent", createEventMap(status, previousPlatform, getTotalTimeSpent()));
+                }
+                return;
+            }
+
             if (!INSTAGRAM_PACKAGE.equals(packageName) &&
                 !YOUTUBE_PACKAGE.equals(packageName) &&
                 !packageName.equals(getPackageName()) &&
@@ -322,6 +350,11 @@ public class ContentMonitorService extends AccessibilityService {
     private void showOverlay(long totalElapsedMsToday, boolean allowClose) {
         if (!Settings.canDrawOverlays(this)) {
             Log.d(TAG, "Overlay permission not granted");
+            return;
+        }
+
+        if (!isCurrentPlatformSectionActive()) {
+            Log.d(TAG, "Skipping overlay because tracked section is not active for platform: " + currentPlatform);
             return;
         }
 
@@ -580,39 +613,44 @@ public class ContentMonitorService extends AccessibilityService {
     private boolean isYouTubeShortsActive(AccessibilityNodeInfo node) {
         if (node == null) return false;
 
-        // Check text content
+        String textLower = "";
         CharSequence text = node.getText();
         if (text != null) {
-            String textLower = text.toString().toLowerCase();
-            // Look for "shorts" tab or section indicator
-            if (textLower.equals("shorts") || textLower.contains("shorts tab")) {
-                return true;
-            }
+            textLower = text.toString().toLowerCase(java.util.Locale.US).trim();
         }
 
-        // Check content description
+        String descLower = "";
         CharSequence contentDesc = node.getContentDescription();
         if (contentDesc != null) {
-            String descLower = contentDesc.toString().toLowerCase();
-            if (descLower.contains("shorts") && (descLower.contains("tab") || descLower.contains("selected"))) {
-                return true;
-            }
-            // YouTube Shorts player specific descriptions
-            if (descLower.contains("short video") || descLower.contains("shorts player")) {
-                return true;
-            }
+            descLower = contentDesc.toString().toLowerCase(java.util.Locale.US);
         }
 
-        // Check view ID resource name for YouTube-specific IDs
+        String viewIdLower = "";
         String viewId = node.getViewIdResourceName();
         if (viewId != null) {
-            String viewIdLower = viewId.toLowerCase();
-            if (viewIdLower.contains("shorts") ||
-                viewIdLower.contains("reel_") ||
-                viewIdLower.contains("pivot_bar") && node.getText() != null &&
-                node.getText().toString().toLowerCase().equals("shorts")) {
-                return true;
-            }
+            viewIdLower = viewId.toLowerCase(java.util.Locale.US);
+        }
+
+        // Only treat tab indicators as Shorts when the Shorts tab is selected.
+        boolean isShortsTabNode =
+            textLower.equals("shorts") ||
+            (descLower.contains("shorts") && descLower.contains("tab")) ||
+            (viewIdLower.contains("pivot_bar") && textLower.equals("shorts"));
+        boolean isSelectedShortsTab = isShortsTabNode && (node.isSelected() || descLower.contains("selected"));
+        if (isSelectedShortsTab) {
+            return true;
+        }
+
+        // Strong Shorts player indicators (avoids false positives on Home/long-form pages).
+        if (descLower.contains("shorts player") ||
+            (descLower.contains("shorts") && descLower.contains("player"))) {
+            return true;
+        }
+        if (viewIdLower.contains("reel_player") ||
+            viewIdLower.contains("shorts_player") ||
+            viewIdLower.contains("shorts_video") ||
+            viewIdLower.contains("shorts_reel")) {
+            return true;
         }
 
         // Recursive check on children
@@ -623,6 +661,21 @@ public class ContentMonitorService extends AccessibilityService {
                 child.recycle();
                 if (result) return true;
             }
+        }
+
+        return false;
+    }
+
+    private boolean isCurrentPlatformSectionActive() {
+        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+        if (rootNode == null) return false;
+
+        if (PLATFORM_INSTAGRAM.equals(currentPlatform)) {
+            return isReelsSectionActive(rootNode);
+        }
+
+        if (PLATFORM_YOUTUBE.equals(currentPlatform)) {
+            return isYouTubeShortsActive(rootNode);
         }
 
         return false;

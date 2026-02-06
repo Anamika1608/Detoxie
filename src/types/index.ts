@@ -22,3 +22,12 @@ export interface Task {
     text: string;
     created_at?: string;
 }
+
+export type Platform = 'instagram' | 'youtube';
+
+export interface PlatformDailyStats {
+    date: string;
+    platform: Platform;
+    total_duration: number;
+    session_count: number;
+}

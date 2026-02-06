@@ -65,10 +65,10 @@ function HomeScreen() {
                         resizeMode="cover"
                     />
                 {/* Main content */}
-                <View className="flex-1 pt-8 px-4">
+                <View className="flex-1 pt-5 px-4">
                     {/* Vacation Mode Toggle and Header text */}
                     <View className="mb-1 px-2 mr-0">
-                        <View className="flex-row items-center justify-between mb-4 mx-4">
+                        <View className="flex-row items-center justify-between mb-2 mx-4">
                             <ThemedText className="text-lg text-[#4C4B7E] font-medium">
                                 Vacation Mode
                             </ThemedText>
@@ -77,9 +77,9 @@ function HomeScreen() {
                             onValueChange={handleVacationModeToggle}
                         />
                         </View>
-                        <ThemedText className="text-black text-4xl leading-10 mb-2 mx-4">
-                            {isVacationMode 
-                                ? "Go, touch some grass ;" 
+                        <ThemedText className="text-black text-4xl leading-10 mb-1 mx-4">
+                            {isVacationMode
+                                ? "Go, touch some grass ;"
                                 : "Take control of your screen time to stay productive."
                             }
                         </ThemedText>
@@ -98,7 +98,7 @@ function HomeScreen() {
                         /* Normal Mode Content */
                         <>
                             {/* Illustration */}
-                            <View className="items-end mb-4 pr-0">
+                            <View className="items-end mb-2 pr-0">
                                 <Image
                                     source={home}
                                     className="w-72 h-48 scale-125"
@@ -107,7 +107,7 @@ function HomeScreen() {
                             </View>
 
                             {/* Action Cards */}
-                            <View className="flex-1 gap-4">
+                            <View className="flex-1 gap-3">
                                 <ActionCard
                                     title="Set timer"
                                     description="Set your limit for scrolling. Once the time's up, we'll remind you of what truly matters."

@@ -3,7 +3,7 @@ import { NativeModules, NativeEventEmitter, Alert } from 'react-native';
 import { DailyStats, UsageSession } from '../types';
 import { DatabaseHelper } from '../database';
 
-const { ReelsMonitorModule } = NativeModules;
+const { ContentMonitorModule } = NativeModules;
 
 interface ReelsEvent {
   status: string;
@@ -27,14 +27,14 @@ export const useReelsTracker = () => {
   }, []);
 
   useEffect(() => {
-    const eventEmitter = new NativeEventEmitter(ReelsMonitorModule);
+    const eventEmitter = new NativeEventEmitter(ContentMonitorModule);
 
-    const timeUpdateListener = eventEmitter.addListener('ReelsTimeUpdate', (event: TimeUpdateEvent) => {
+    const timeUpdateListener = eventEmitter.addListener('ContentTimeUpdate', (event: TimeUpdateEvent) => {
       setCurrentSessionTime(event.currentSessionTime);
       setTotalTimeSpent(event.totalTimeSpent);
     });
 
-    const statusListener = eventEmitter.addListener('ReelsEvent', (event: ReelsEvent) => {
+    const statusListener = eventEmitter.addListener('ContentEvent', (event: ReelsEvent) => {
       setReelsStatus(event.status);
       if (event.totalTimeSpent !== undefined) {
         setTotalTimeSpent(event.totalTimeSpent);

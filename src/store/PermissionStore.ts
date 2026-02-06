@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { NativeModules, AppState } from 'react-native';
 import { dbHelper, DatabaseHelper } from '../database';
 
-const { ReelsMonitorModule } = NativeModules;
+const { ContentMonitorModule } = NativeModules;
 
 interface PermissionStore {
   // State
@@ -80,7 +80,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
 
   configureOverlay: async (config) => {
     try {
-      await ReelsMonitorModule.configureOverlay(config);
+      await ContentMonitorModule.configureOverlay(config);
       set({ overlayConfig: { ...get().overlayConfig, ...config } });
       console.log('Overlay configured successfully');
     } catch (error) {
@@ -96,7 +96,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
 
   setVacationMode: async (isVacationMode) => {
     try {
-      await ReelsMonitorModule.setVacationMode(isVacationMode);
+      await ContentMonitorModule.setVacationMode(isVacationMode);
       set({ isVacationMode });
       console.log('Vacation mode updated:', isVacationMode);
     } catch (error) {
@@ -124,7 +124,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
 
       await get().configureOverlay(config);
       
-      await ReelsMonitorModule.startMonitoring();
+      await ContentMonitorModule.startMonitoring();
       set({ 
         isMonitoring: true,
         reelsStatus: 'Monitoring Active',
@@ -139,7 +139,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
 
   stopMonitoring: async () => {
     try {
-      await ReelsMonitorModule.stopMonitoring();
+      await ContentMonitorModule.stopMonitoring();
       set({ 
         isMonitoring: false,
         reelsStatus: 'Monitoring Stopped'
@@ -155,8 +155,8 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
     
     try {
       set({ isCheckingPermissions: true });
-      const accessibilityResult = await ReelsMonitorModule.checkAccessibilityPermission();
-      const overlayResult = await ReelsMonitorModule.checkOverlayPermission();
+      const accessibilityResult = await ContentMonitorModule.checkAccessibilityPermission();
+      const overlayResult = await ContentMonitorModule.checkOverlayPermission();
 
       set({
         hasAccessibilityPermission: accessibilityResult,
@@ -193,9 +193,9 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
     
     try {
       if (permissionModalType === 'accessibility') {
-        await ReelsMonitorModule.requestAccessibilityPermission();
+        await ContentMonitorModule.requestAccessibilityPermission();
       } else if (permissionModalType === 'overlay') {
-        await ReelsMonitorModule.requestOverlayPermission();
+        await ContentMonitorModule.requestOverlayPermission();
       }
       
       // Setup listener for when user returns

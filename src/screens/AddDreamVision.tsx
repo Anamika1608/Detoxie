@@ -73,7 +73,7 @@ function AddDreamVisionScreen() {
     return (
         <SafeAreaView className="flex-1 bg-[#FBF7EF]">
             {/* Header text */}
-            <View className="pt-12 px-6">
+            <View className="pt-12 px-8">
                 <ThemedText className="text-black text-3xl leading-10 mb-2" style={{ fontFamily: 'YoungSerif-Regular' }}>
                     Add your dream photo that inspires you.
                 </ThemedText>
@@ -126,7 +126,7 @@ function AddDreamVisionScreen() {
             </ScrollView>
 
             {/* Button fixed at bottom */}
-            <View className="px-4 pb-8 bg-[#FBF7EF]">
+            <View className="px-8 pb-8 bg-[#FBF7EF]">
                 <CustomButton
                     title={
                         imageBase64

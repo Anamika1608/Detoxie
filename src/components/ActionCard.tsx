@@ -12,7 +12,7 @@ const ActionCard = ({
     return (
         <TouchableOpacity
             onPress={onPress}
-            className={`rounded-2xl p-4 mx-4 mb-4 border-black`}
+            className={`rounded-2xl p-4 mx-4 mb-1 border-black`}
             style={[
                 {
                     backgroundColor,

@@ -1,4 +1,4 @@
-import type { UsageSession, DailyStats, Task } from '../types';
+import type { UsageSession, DailyStats, Task, Platform, PlatformDailyStats } from '../types';
 import { openDatabase } from './database.config';
 import { TABLES } from './database.tables';
 import SQLite from 'react-native-sqlite-storage';
@@ -186,6 +186,99 @@ export class DatabaseHelper {
             console.error('Error getting total usage time:', error);
             throw error;
         }
+    }
+
+    // Platform-specific stats methods
+
+    async updatePlatformDailyStats(platform: Platform, duration: number): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        const today = new Date().toISOString().split('T')[0];
+
+        const existing = await this.db.executeSql(
+            'SELECT * FROM platform_daily_stats WHERE date = ? AND platform = ?',
+            [today, platform]
+        );
+
+        if (existing[0].rows.length > 0) {
+            const current = existing[0].rows.item(0);
+            const total = current.total_duration + duration;
+            const count = current.session_count + 1;
+
+            await this.db.executeSql(
+                `UPDATE platform_daily_stats
+                 SET total_duration = ?, session_count = ?, updated_at = CURRENT_TIMESTAMP
+                 WHERE date = ? AND platform = ?`,
+                [total, count, today, platform]
+            );
+        } else {
+            await this.db.executeSql(
+                `INSERT INTO platform_daily_stats (date, platform, total_duration, session_count)
+                 VALUES (?, ?, ?, ?)`,
+                [today, platform, duration, 1]
+            );
+        }
+    }
+
+    async getPlatformDailyStats(date: string): Promise<PlatformDailyStats[]> {
+        if (!this.db) throw new Error('Database not initialized');
+
+        const results = await this.db.executeSql(
+            'SELECT * FROM platform_daily_stats WHERE date = ?',
+            [date]
+        );
+
+        const stats: PlatformDailyStats[] = [];
+        const rows = results[0].rows;
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows.item(i);
+            stats.push({
+                date: row.date,
+                platform: row.platform as Platform,
+                total_duration: row.total_duration,
+                session_count: row.session_count,
+            });
+        }
+        return stats;
+    }
+
+    async getTodayUsageByPlatform(): Promise<Record<Platform, number>> {
+        if (!this.db) throw new Error('Database not initialized');
+        const today = new Date().toISOString().split('T')[0];
+
+        const results = await this.db.executeSql(
+            'SELECT platform, total_duration FROM platform_daily_stats WHERE date = ?',
+            [today]
+        );
+
+        const usage: Record<Platform, number> = {
+            instagram: 0,
+            youtube: 0,
+        };
+
+        const rows = results[0].rows;
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows.item(i);
+            if (row.platform === 'instagram' || row.platform === 'youtube') {
+                usage[row.platform as Platform] = row.total_duration || 0;
+            }
+        }
+
+        return usage;
+    }
+
+    async getTodayTotalUsage(): Promise<number> {
+        if (!this.db) throw new Error('Database not initialized');
+        const today = new Date().toISOString().split('T')[0];
+
+        const results = await this.db.executeSql(
+            'SELECT SUM(total_duration) as total FROM platform_daily_stats WHERE date = ?',
+            [today]
+        );
+
+        if (results[0].rows.length > 0) {
+            return results[0].rows.item(0).total || 0;
+        }
+        return 0;
     }
 
 }

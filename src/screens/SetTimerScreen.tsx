@@ -66,7 +66,7 @@ function SetTimerScreen() {
                         height: 200,
                         elevation: 5,
                         shadowColor: '#000',
-                        shadowOffset: { width: 0, y: 2 },
+                        shadowOffset: { width: 0, height: 2 },
                         shadowOpacity: 0.1,
                         shadowRadius: 4,
                     }}
@@ -112,7 +112,7 @@ function SetTimerScreen() {
                 {saveStatus === 'saved' && (
                     <View className='mt-4 bg-green-100 px-4 py-2 rounded-2xl'>
                         <ThemedText className='text-green-700 font-medium'>
-                            Timer saved successfully!
+                            Timer saved!
                         </ThemedText>
                     </View>
                 )}
